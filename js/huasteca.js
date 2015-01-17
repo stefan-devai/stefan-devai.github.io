@@ -55,8 +55,8 @@ function create()
 	game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER);
 
 	// Music
-	//music = game.add.audio('lapartida', 1, true);
-	//music.onDecoded.add(startMusic, this);
+	music = game.add.audio('lapartida', 1, true);
+	music.onDecoded.add(startMusic, this);
 }
 
 function startMusic()
