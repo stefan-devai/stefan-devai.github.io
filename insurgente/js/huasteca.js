@@ -1,10 +1,10 @@
-var game = new Phaser.Game(800, 600, Phaser.AUTO, 'm-game', { preload: preload, create: create, update: update });
+var game = new Phaser.Game(640, 480, Phaser.AUTO, 'm-game', { preload: preload, create: create, update: update });
 
 function preload()
 {
-	game.load.spritesheet('huasteca', 'img/spritesheet6.png', 23, 51, 23);
+	game.load.spritesheet('huasteca', 'img/h_walk_jump.png', 23, 51, 23);
 	game.load.tilemap('woods', 'maps/woods.json', null, Phaser.Tilemap.TILED_JSON);
-	game.load.image('tileset', 'img/tiles2x3.png');
+	game.load.image('tileset', 'img/terrain.png');
 	game.load.audio('lapartida', ['music/lapartida.mp3']);
 }
 
@@ -20,6 +20,11 @@ var layer2;
 var music;
 
 var grounded;
+
+// Score
+var score = 0;
+var scoreString;
+var scoreText;
 
 function create()
 {
@@ -37,7 +42,7 @@ function create()
 	//layer.debug = true;
 
 	// Player
-	player = game.add.sprite(100, 705, 'huasteca');
+	player = game.add.sprite(100, 690, 'huasteca');
 	player.anchor.setTo(.5, 1);
 	player.scale.x = player_scale;
 	player.scale.y = player_scale;
@@ -65,7 +70,7 @@ function startMusic()
 }
 var lanim;
 function update()
-{
+{	
 	cursors = game.input.keyboard.createCursorKeys();
 	game.physics.arcade.collide(layer2, player);
 	player.body.velocity.x = 0;
@@ -115,7 +120,7 @@ function update()
 
 	if (grounded && cursors.up.isDown)
 	{
-		player.body.velocity.y = -600;
+		player.body.velocity.y = -530;
 		player.animations.play('jump');
 	}
 
@@ -128,7 +133,17 @@ function update()
 		player.scale.x = player_scale;
 	}
 
-  game.time.advancedTiming = true;
-  game.debug.text(this.game.time.fps || '--', 2, 14, "#ffffff");
+	// Debug FPS
+  	game.time.advancedTiming = true;
+  	game.debug.text('FPS: ' + this.game.time.fps || '--', 2, 14, "#ffffff");
 
 }
+
+function collectPoints(player, obj)
+{
+	obj.kill();
+	score += 1;
+	scoreText = 'Puntos: ' + score;
+}
+
+
