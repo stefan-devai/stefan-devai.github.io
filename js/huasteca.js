@@ -2,8 +2,8 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, 'm-game', { preload: preload, 
 
 function preload()
 {
-	game.load.spritesheet('huasteca', 'img/spritesheet2.png', 23, 51, 26);
-	game.load.tilemap('woods', 'maps/woods6.json', null, Phaser.Tilemap.TILED_JSON);
+	game.load.spritesheet('huasteca', 'img/spritesheet.png', 23, 51, 23);
+	game.load.tilemap('woods', 'maps/woods.json', null, Phaser.Tilemap.TILED_JSON);
 	game.load.image('tileset', 'img/tiles2x.png');
 	game.load.audio('lapartida', ['music/lapartida.mp3']);
 }
@@ -18,7 +18,7 @@ var layer;
 
 var music;
 
-var isFalling;
+var grounded;
 
 function create()
 {
@@ -46,9 +46,8 @@ function create()
 	player.body.collideWorldBounds = false;
 	player.animations.add('idle', [0,1,2,3,4,5], 5, true);
 	player.animations.add('walk', [8,9,10,11,12,13,14,15], 8, true);
-	player.animations.add('jump', [16,17,18,19,20], 10, false);
-	player.animations.add('falling', [21,22,23], 8, true);
-	player.animations.add('landing', [24,25], 5, false);
+	player.animations.add('jump', [16,17,18,19,20,21,22,20], 8, false);
+	player.animations.add('falling', [20,21,22], 8, true);
 
 	// Camera
 	game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER);
@@ -62,16 +61,24 @@ function startMusic()
 {
 	music.fadeIn(4000, true);
 }
-
+var lanim;
 function update()
 {
 	cursors = game.input.keyboard.createCursorKeys();
 	game.physics.arcade.collide(player, layer);
 
+	if (player.body.blocked.down)
+	{
+		grounded = true;
+	}
+	else
+	{
+		grounded = false;
+	}
+
 	if (player.body.velocity.y > 0)
 	{
-		isFalling = true;
-		if (player.body.velocity.y > 350)
+		if (player.body.velocity.y > 250)
 		{
 			player.animations.play('falling');
 		}
@@ -83,32 +90,27 @@ function update()
 		facingLeft = true;
 		player.body.velocity.x = -250;
 
-		if (player.body.blocked.down)
+		if (grounded)
 		{
 			player.animations.play('walk');
 		}
-	}
-	else if (isFalling === true && player.body.velocity.y <= 0)
-	{
-		player.animations.play('landing');
-		isFalling = false;
 	}
 	else if (cursors.right.isDown)
 	{
 		facingLeft = false;
 		player.body.velocity.x = 250;
 
-		if (player.body.blocked.down)
+		if (grounded)
 		{
 			player.animations.play('walk');
 		}
 	}
-	else if (player.body.blocked.down)
+	else if (grounded)
 	{
 		player.animations.play('idle');
 	}
 
-	if (cursors.up.isDown && player.body.blocked.down)
+	if (grounded && cursors.up.isDown)
 	{
 		player.body.velocity.y = -600;
 		player.animations.play('jump');
