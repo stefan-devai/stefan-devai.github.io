@@ -2,9 +2,9 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, 'm-game', { preload: preload, 
 
 function preload()
 {
-	game.load.spritesheet('huasteca', 'img/spritesheet.png', 23, 51, 23);
+	game.load.spritesheet('huasteca', 'img/spritesheet6.png', 23, 51, 23);
 	game.load.tilemap('woods', 'maps/woods.json', null, Phaser.Tilemap.TILED_JSON);
-	game.load.image('tileset', 'img/tiles2x.png');
+	game.load.image('tileset', 'img/tiles2x3.png');
 	game.load.audio('lapartida', ['music/lapartida.mp3']);
 }
 
@@ -14,7 +14,8 @@ var cursors;
 var facingLeft = false;
 
 var map;
-var layer;
+var layer1;
+var layer2;
 
 var music;
 
@@ -22,20 +23,21 @@ var grounded;
 
 function create()
 {
-	game.stage.backgroundColor = '#576f4b';
+	game.stage.backgroundColor = '#606756';
 
 	game.physics.startSystem(Phaser.Physics.ARCADE);
 
 	// Map
 	map = game.add.tilemap('woods');
-	map.addTilesetImage('woodstiles', 'tileset');
-	layer = map.createLayer('world1');
-	layer.resizeWorld();
-	map.setCollisionBetween(0, 100);
+	map.addTilesetImage('wood_tiles', 'tileset');
+	layer1 = map.createLayer('bgtrees_layer');
+	layer2 = map.createLayer('collide_layer');
+	layer2.resizeWorld();
+	map.setCollisionBetween(0, 100, true, layer2, true);
 	//layer.debug = true;
 
 	// Player
-	player = game.add.sprite(100, 1900, 'huasteca');
+	player = game.add.sprite(100, 705, 'huasteca');
 	player.anchor.setTo(.5, 1);
 	player.scale.x = player_scale;
 	player.scale.y = player_scale;
@@ -53,8 +55,8 @@ function create()
 	game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER);
 
 	// Music
-	music = game.add.audio('lapartida', 1, true);
-	music.onDecoded.add(startMusic, this);
+	//music = game.add.audio('lapartida', 1, true);
+	//music.onDecoded.add(startMusic, this);
 }
 
 function startMusic()
@@ -65,7 +67,8 @@ var lanim;
 function update()
 {
 	cursors = game.input.keyboard.createCursorKeys();
-	game.physics.arcade.collide(player, layer);
+	game.physics.arcade.collide(layer2, player);
+	player.body.velocity.x = 0;
 
 	if (player.body.blocked.down)
 	{
@@ -78,7 +81,7 @@ function update()
 
 	if (player.body.velocity.y > 0)
 	{
-		if (player.body.velocity.y > 250)
+		if (player.body.velocity.y > 340)
 		{
 			player.animations.play('falling');
 		}
@@ -124,4 +127,8 @@ function update()
 	{
 		player.scale.x = player_scale;
 	}
+
+  game.time.advancedTiming = true;
+  game.debug.text(this.game.time.fps || '--', 2, 14, "#ffffff");
+
 }
