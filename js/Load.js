@@ -16,7 +16,7 @@ GameControl.Load.prototype = {
 		this.load.spritesheet('playButton', 'img/playb.png', 189, 74, 1);
 
 		// Assets del juego
-		this.load.spritesheet('insurgente', 'img/h_walk_jump2.png', 46, 102, 23);
+		this.load.spritesheet('insurgente', 'img/h_walk_jump.png', 46, 102, 23);
 		this.load.image('bullet', 'img/m-bullet.png');
 		this.load.image('darkborder', 'img/darkborder.png');
 
