@@ -8,7 +8,7 @@ GameControl.MainMenu.prototype = {
 		this.music = this.add.audio('lapartida');
 		this.music.play();
 
-		this.add.sprite(0, 0, 'menuBG');
+		//this.add.sprite(0, 0, 'menuBG');
 		this.playButton = this.add.button(295, 240, 'playButton', this.startGame, this, 0, 0, 0);
 	},
 
