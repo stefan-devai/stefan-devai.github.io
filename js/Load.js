@@ -7,7 +7,7 @@ GameControl.Load = function(game) {
 GameControl.Load.prototype = {
 	preload: function() {
 
-		//this.background = this.add.sprite(0, 0, 'preloaderBG');
+		this.background = this.add.sprite(0, 0, 'preloaderBG');
 		this.preloadBar = this.add.sprite(120, 320, 'preloaderBar');
 		this.load.setPreloadSprite(this.preloadBar);
 
