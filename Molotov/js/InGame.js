@@ -1,3 +1,5 @@
+// Good particle example: http://codepen.io/vincentscotto/pen/eAgjK
+
 GameControl.InGame = function(game) {
 	this.game;
 	this.add;
@@ -30,7 +32,7 @@ GameControl.InGame.prototype = {
 		this.ACCELERATION = 1200;
 		this.DRAG = 1000;
 
-		this.THROW_DELAY = 300;
+		this.THROW_DELAY = 700;
 		this.MOLOTOV_SPEED = 700;
 		this.NUMBER_OF_MOLOTOVS = 100;
 
@@ -65,6 +67,8 @@ GameControl.InGame.prototype = {
 	    this.fire_emitter.setAlpha(0.9, 0.7, 500);
 	    this.fire_emitter.setScale(0.9, 0.2, 0.7, 0.2, 500);
 	    this.fire_emitter.setRotation(0, 90);
+	    this.fire_emitter.start(false, 300, 3);
+	    this.fire_emitter.on = false;
 	    
 
     	// MOLOTOV settings
@@ -99,8 +103,7 @@ GameControl.InGame.prototype = {
 	update: function() {
 		this.physics.arcade.collide(this.player, this.lCollision);
 		this.physics.arcade.collide(this.molotovPool, this.lCollision, function(molotov, lCollision) {
-			this.fire_emitter.alpha = 0;
-			this.fire_emitter.kill();
+			this.fire_emitter.on = false;
 			molotov.kill();
 		}, null, this);
 		this.physics.arcade.overlap(this.player, this.molotov_itens, this.collectMolotov, null, this);
@@ -159,11 +162,7 @@ GameControl.InGame.prototype = {
 	},
 
 	throwMolotov: function() {
-		this.fire_emitter.revive();
-		this.fire_emitter.x = this.player.x;
-		this.fire_emitter.y = this.player.y;
-		this.fire_emitter.start(false, 300, 3);
-		this.fire_emitter.alpha = 1;
+		this.fire_emitter.on = true;
 
 		if(this.lastMolotovShotAt == undefined) this.lastMolotovShotAt = 0;
 		if(this.game.time.now - this.lastMolotovShotAt < this.THROW_DELAY) return;
