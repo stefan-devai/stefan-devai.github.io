@@ -18,7 +18,7 @@ GameControl.Load.prototype = {
 		this.load.spritesheet('spritesheet', 'src/sprites/spritesheet.png', 32, 32);
 		this.load.spritesheet('player', 'src/sprites/character.png', 40, 60);
 		this.load.tilemap('map', 'src/maps/tmapf.json', null, Phaser.Tilemap.TILED_JSON);
-		this.load.image('bg', 'src/img/bg7.png');
+		this.load.image('bg', 'src/img/bg.png');
 
 		this.load.audio('barricadas', 'src/sound/barricadas.ogg');
 		this.load.audio('glass-break', 'src/sound/glass-break.ogg');
