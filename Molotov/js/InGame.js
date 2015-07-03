@@ -1,5 +1,3 @@
-// Good particle example: http://codepen.io/vincentscotto/pen/eAgjK
-
 GameControl.InGame = function(game) {
 	this.game;
 	this.add;
@@ -16,7 +14,6 @@ GameControl.InGame = function(game) {
 	this.world;
 	this.particles;
 	this.physics;
-	this.rnd;
 
 	this.facingLeft = false;
 	this.onGround = false;
@@ -33,8 +30,8 @@ GameControl.InGame.prototype = {
 		this.DRAG = 1000;
 
 		this.THROW_DELAY = 700;
-		this.MOLOTOV_SPEED = 700;
-		this.NUMBER_OF_MOLOTOVS = 100;
+		this.MOLOTOV_SPEED = 800;
+		this.NUMBER_OF_MOLOTOVS = 5;
 
 		this.stage.backgroundColor = '#2e2d2d';
 		this.game.input.keyboard.addKeyCapture([Phaser.Keyboard.LEFT, Phaser.Keyboard.RIGHT, Phaser.Keyboard.UP, Phaser.Keyboard.DOWN]);
@@ -59,17 +56,6 @@ GameControl.InGame.prototype = {
 		this.player.body.drag.setTo(this.DRAG, 0);
 
     	this.camera.follow(this.player, Phaser.Camera.FOLLOW_PLATFORMER);
-
-    	// PARTICLES settings
-	    this.fire_emitter = this.add.emitter(0, 0, 400);
-	    this.fire_emitter.makeParticles('spritesheet', [21,22,23,24]);
-	    this.fire_emitter.gravity = 700;
-	    this.fire_emitter.setAlpha(0.9, 0.7, 500);
-	    this.fire_emitter.setScale(0.9, 0.2, 0.7, 0.2, 500);
-	    this.fire_emitter.setRotation(0, 90);
-	    this.fire_emitter.start(false, 300, 3);
-	    this.fire_emitter.on = false;
-	    
 
     	// MOLOTOV settings
     	this.molotovPool = this.game.add.group();
@@ -101,26 +87,22 @@ GameControl.InGame.prototype = {
 	},
 
 	update: function() {
-		this.physics.arcade.collide(this.player, this.lCollision);
+		this.physics.arcade.collide(this.player, this.lCollision); // Make the player collide with the collision layer
 		this.physics.arcade.collide(this.molotovPool, this.lCollision, function(molotov, lCollision) {
-			this.fire_emitter.on = false;
+			// Kill the molotov that reached the ground and turn its emitter off.
+			molotov.fire_emitter.on = false;
 			molotov.kill();
 		}, null, this);
-		this.physics.arcade.overlap(this.player, this.molotov_itens, this.collectMolotov, null, this);
+		this.physics.arcade.overlap(this.player, this.molotov_itens, this.collectMolotov, null, this); // Collect molotovs
 
+		// Gets the angle from the player to the pointer. Used to calculate molotov trajectory.
 		this.pointerRot = this.game.physics.arcade.angleToPointer(this.player);
 
+		// Update the position of the fire emitter on each step and emit a particle
 		this.molotovPool.forEachAlive(function(molotov) {
-			var px = molotov.body.velocity.x;
-			var py = molotov.body.velocity.y;
-			px *= -1;
-			py *= -1;
-
-			this.fire_emitter.minParticleSpeed.set(px, py);
-			this.fire_emitter.maxParticleSpeed.set(px, py);
-
-			this.fire_emitter.x = molotov.x;
-			this.fire_emitter.y = molotov.y;
+			molotov.fire_emitter.x = molotov.x;
+			molotov.fire_emitter.y = molotov.y - 5;
+			molotov.fire_emitter.emitParticle();
 		}, this);
 
 		if(this.player.body.blocked.down) this.onGround = true;
@@ -131,7 +113,7 @@ GameControl.InGame.prototype = {
 			this.player.body.velocity.y = this.JUMP_SPEED;
 		}
 
-		// Movement
+		// Left/Right movement
 		if(this.input.keyboard.isDown(Phaser.Keyboard.LEFT)) {
 			this.player.body.acceleration.x = -this.ACCELERATION;
 			if(this.facingLeft == false) this.facingLeft = true;
@@ -162,8 +144,6 @@ GameControl.InGame.prototype = {
 	},
 
 	throwMolotov: function() {
-		this.fire_emitter.on = true;
-
 		if(this.lastMolotovShotAt == undefined) this.lastMolotovShotAt = 0;
 		if(this.game.time.now - this.lastMolotovShotAt < this.THROW_DELAY) return;
     	this.lastMolotovShotAt = this.game.time.now;
@@ -179,6 +159,16 @@ GameControl.InGame.prototype = {
     	molotov.body.velocity.x = Math.cos(this.pointerRot) * this.MOLOTOV_SPEED;
     	molotov.body.velocity.y = Math.sin(this.pointerRot) * this.MOLOTOV_SPEED;
     	this.NUMBER_OF_MOLOTOVS--;
+
+    	// Create a particle emitter for the molotov
+	    molotov.fire_emitter = this.add.emitter(molotov.x, molotov.y - 5, 1000);
+	    molotov.fire_emitter.makeParticles('spritesheet', [21, 22, 23, 24]);
+	    molotov.fire_emitter.lifespan = 500;
+	    molotov.fire_emitter.setAlpha(1.0, 0.5, 500);
+	    molotov.fire_emitter.setScale(1.0, 0.2, 0.7, 0.2, 500);
+	    molotov.fire_emitter.setRotation(0, 100);
+	    molotov.fire_emitter.maxParticleSpeed = new Phaser.Point(-80,40);
+  		molotov.fire_emitter.minParticleSpeed = new Phaser.Point(-190,-40);
 	},
 
 	collectMolotov: function(player, molotov) {
