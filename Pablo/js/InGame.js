@@ -27,15 +27,15 @@ GameControl.InGame.prototype = {
 		this.JUMP_SPEED = -500;
 		this.MAX_SPEED = 300;
 		this.ACCELERATION = 1200;
-		this.DRAG = 1000;
+		this.DRAG = 1200;
 
 		this.THROW_DELAY = 700;
 		this.MOLOTOV_SPEED = 800;
-		this.NUMBER_OF_MOLOTOVS = 50;
+		this.NUMBER_OF_MOLOTOVS = 5;
 
-		//this.stage.backgroundColor = '#2e2d2d';
-		this.backgroundIMG = this.game.add.image(0, 0, 'bg');
-		this.backgroundIMG.fixedToCamera = true;
+		this.stage.backgroundColor = '#2e2d2d';
+		//this.backgroundIMG = this.game.add.image(0, 0, 'bg');
+		//this.backgroundIMG.fixedToCamera = true;
 		this.game.input.keyboard.addKeyCapture([Phaser.Keyboard.LEFT, Phaser.Keyboard.RIGHT, Phaser.Keyboard.UP, Phaser.Keyboard.DOWN]);
 		this.time.advancedTiming = true;
 		this.molotovAmmo = this.add.text(100, 100, "");
@@ -54,6 +54,7 @@ GameControl.InGame.prototype = {
 		this.player.body.collideWorldBounds = true;
 		this.player.body.gravity.y = this.GRAVITY;
 		this.player.body.allowRotation = false;
+		//this.player.body.bounce = 0;
 		this.player.body.maxVelocity.setTo(this.MAX_SPEED, this.MAX_SPEED * 10);
 		this.player.body.drag.setTo(this.DRAG, 0);
 
@@ -74,7 +75,7 @@ GameControl.InGame.prototype = {
     	this.molotov_itens = this.game.add.group();
     	this.molotov_itens.enableBody = true;
 
-    	this.map.createFromObjects('collectable', 21, 'spritesheet', 20, true, false, this.molotov_itens);
+    	this.map.createFromObjects('obj', 21, 'spritesheet', 20, true, false, this.molotov_itens);
     	this.molotov_itens.forEach(function(molotov) {
     		molotov.animations.add('flames', [20, 21, 22], 5, true);
     		molotov.animations.play('flames');
@@ -84,6 +85,16 @@ GameControl.InGame.prototype = {
     	this.molotovIcon.animations.add('flames', [20, 21, 22], 5, true);
     	this.molotovIcon.fixedToCamera = true;
     	this.molotovIcon.animations.play('flames');
+
+    	// BOXES settings
+    	this.boxes = this.game.add.group();
+    	this.map.createFromObjects('obj', 10, 'spritesheet', 9, true, false, this.boxes);
+    	this.boxes.forEach(function(box) {
+    		this.game.physics.enable(box, Phaser.Physics.ARCADE);
+    		box.body.gravity.y = 1000;
+    		box.body.drag.set(500);
+    		box.body.immovable = true;
+    	}, this);
 
     	// MAP settings - COLLISION/FOREGROUND
 		this.lCollision = this.map.createLayer('collision');
@@ -107,7 +118,10 @@ GameControl.InGame.prototype = {
 
 	update: function() {
 		this.physics.arcade.collide(this.player, this.lCollision); // Make the player collide with the collision layer
+		this.physics.arcade.overlap(this.player, this.molotov_itens, this.collectMolotov, null, this); // Collect molotovs
 		this.physics.arcade.collide(this.fires, this.lCollision);
+		this.physics.arcade.collide(this.boxes, this.lCollision);
+		this.physics.arcade.collide(this.boxes);
 		this.physics.arcade.collide(this.molotovPool, this.lCollision, function(molotov) {
 			var hit_sin = Math.sin(molotov.rotation);
 			var hit_cos = Math.cos(molotov.rotation);
@@ -156,7 +170,14 @@ GameControl.InGame.prototype = {
 			molotov.kill();
 
 		}, null, this);
-		this.physics.arcade.overlap(this.player, this.molotov_itens, this.collectMolotov, null, this); // Collect molotovs
+		this.physics.arcade.collide(this.player, this.boxes, function(player, box) {
+			if(box.body.touching.left) {
+				box.body.velocity.x = 100;
+			}
+			else if(box.body.touching.right) {
+				box.body.velocity.x = -100;
+			}
+		}, null, this);
 
 		// Gets the angle from the player to the pointer. Used to calculate molotov trajectory.
 		this.pointerRot = this.game.physics.arcade.angleToPointer(this.player);
@@ -255,14 +276,16 @@ GameControl.InGame.prototype = {
 	getFire: function(x, y, size) {
 		var fire = this.add.emitter(x, y + 20, 50);
 		this.fires.add(fire);
-		fire.makeParticles('spritesheet', [23, 24, 25]);
+		fire.makeParticles('spritesheet', [23, 24, 25, 26]);
 		fire.lifespan = 500;
 		fire.setAlpha(0.9, 0.0, 1000);
 	    fire.setRotation(0, 100);
 	    fire.setScale(0.7, 0.95, 0.7, 0.95, 500);
 		fire.maxParticleSpeed = new Phaser.Point(100, 0);
   		fire.minParticleSpeed = new Phaser.Point(-100, -220*Math.abs(size) - 100);
+	},
 
-  		
+	moveBox: function() {
+
 	}
 };
