@@ -19,7 +19,6 @@ GameControl.InGame = function(game) {
 	this.onGround = false;
 	this.pointerRot = 0;
 	this.maxVol = 0.55;
-	this.lastTimeHit = 0;
 };
 
 GameControl.InGame.prototype = {
@@ -36,9 +35,12 @@ GameControl.InGame.prototype = {
 
 		this.THROW_DELAY = 700;
 		this.MOLOTOV_SPEED = 800;
-		this.NUMBER_OF_MOLOTOVS = 5;
+		this.NUMBER_OF_MOLOTOVS = 10;
 
 		this.HIT_DELAY = 700;
+
+		this.NUMBER_OF_GENDARMES = 10;
+		this.lastGendarmeAddedAt = 0;
 
 		this.stage.backgroundColor = '#2e2d2d';
 		this.game.input.keyboard.addKeyCapture([Phaser.Keyboard.LEFT, Phaser.Keyboard.RIGHT, Phaser.Keyboard.UP, Phaser.Keyboard.DOWN]);
@@ -55,6 +57,7 @@ GameControl.InGame.prototype = {
 		this.player.anchor.setTo(0.5, 0.5);
 		this.player.smoothed = false;
 		this.player.health = 100;
+		this.player.lastTimeHit = 0;
 
 		this.game.physics.enable(this.player, Phaser.Physics.ARCADE);
 		this.player.body.collideWorldBounds = true;
@@ -65,6 +68,43 @@ GameControl.InGame.prototype = {
 		this.player.body.setSize(25, 50, 0, 5);
 
     	this.camera.follow(this.player, Phaser.Camera.FOLLOW_PLATFORMER);
+
+    	// GENDARME settings
+    	this.gendarmePool = this.game.add.group();
+    	for (var i = 0; i < this.NUMBER_OF_GENDARMES; ++i) {
+    		var gendarme = this.game.add.sprite(0, 0, 'robot1');
+    		this.gendarmePool.add(gendarme);
+    		gendarme.animations.add('blink', [0, 1], 5, true);
+    		gendarme.smoothed = false;
+    		gendarme.anchor.setTo(0.5, 0.5);
+    		this.game.physics.enable(gendarme, Phaser.Physics.ARCADE);
+    		gendarme.body.gravity.y = this.GRAVITY;
+    		gendarme.body.collideWorldBounds = true;
+			gendarme.body.allowRotation = false;
+			gendarme.body.maxVelocity.setTo(this.MAX_SPEED/4, this.MAX_SPEED * 5);
+			gendarme.body.drag.setTo(this.DRAG, 0);
+    		gendarme.kill();
+    	}
+
+    	var inig = this.gendarmePool.getFirstDead();
+    	inig.revive();
+    	inig.reset(2496, 480);
+    	inig.hp = 30;
+    	inig.triedJump = false;
+		inig.onGround = false;
+		inig.turnedLeft = false;
+		inig.lastTimeHit = 0;
+		inig.animations.play('blink');
+
+		var inig2 = this.gendarmePool.getFirstDead();
+    	inig2.revive();
+    	inig2.reset(1696, 672);
+    	inig2.hp = 30;
+    	inig2.triedJump = false;
+		inig2.onGround = false;
+		inig2.turnedLeft = false;
+		inig2.lastTimeHit = 0;
+		inig2.animations.play('blink');
 
     	// MOLOTOV settings
     	this.molotovPool = this.game.add.group();
@@ -96,7 +136,8 @@ GameControl.InGame.prototype = {
 
 		// FIRE settings
 		this.fires = this.game.add.group();
-		for(var i = 0; i < 100; ++i) {
+		this.fireSprites = this.game.add.group();
+		for(var i = 0; i < 55; ++i) {
 			var fire = this.add.emitter(0, 0, 50);
 			this.fires.add(fire);
 			fire.makeParticles('spritesheet', [23, 24, 25, 26]);
@@ -104,6 +145,13 @@ GameControl.InGame.prototype = {
 			fire.setRotation(0, 100);
 			fire.setScale(0.7, 0.95, 0.7, 0.95, 500);
 			fire.maxParticleSpeed = new Phaser.Point(100, 0);
+
+			fire.spr = this.game.add.sprite(0, 0, 'spritesheet', 0);
+			this.fireSprites.add(fire.spr);
+			this.game.physics.enable(fire.spr, Phaser.Physics.ARCADE);
+			fire.spr.alpha = 0.0;
+			fire.spr.kill()
+
 			fire.kill();
 		}
 
@@ -125,31 +173,11 @@ GameControl.InGame.prototype = {
 
 	update: function() {
 		this.update_player();
+		this.update_gendarmes();
 		this.update_molotovs();
 		this.update_fires();
-	},
 
-	render: function() {
-		// Debug FPS
-	  	//this.game.debug.text(this.game.time.fps + " FPS" || '--', 2, 14, "#ffffff");
-	  	this.game.debug.text("HEALTH: " + this.player.health, 10, 30, "#ffffff");
-	  	this.game.debug.text("x " + this.NUMBER_OF_MOLOTOVS, this.game.width - 50, 30, "#ffffff");
-	},
-
-	update_player: function() {
-		this.physics.arcade.collide(this.player, this.lCollision); // Make the player collide with the collision layer
-		this.physics.arcade.overlap(this.player, this.molotov_itens, this.collectMolotov, null, this); // Collect molotovs
-
-		// If player dies
-		if(this.player.health == 0) {
-			this.fire_loop.stop();
-			this.main_song.stop();
-			this.state.start("MainMenu");
-		}
-
-		if(this.player.body.blocked.down) this.onGround = true;
-		else this.onGround = false;
-
+		// INPUT
 		// Jump
 		if(this.onGround && (this.input.keyboard.downDuration(Phaser.Keyboard.W, 10) || this.input.keyboard.downDuration(Phaser.Keyboard.UP, 10))) {
 			this.player.body.velocity.y = this.JUMP_SPEED;
@@ -168,9 +196,84 @@ GameControl.InGame.prototype = {
 			this.player.body.acceleration.x = 0;
 		}
 
+		// Throw molotov
+		if (this.game.input.activePointer.isDown) {
+			if (this.input.keyboard.isDown(Phaser.Keyboard.G)) {
+				this.addGendarme();
+			}
+			else if (this.NUMBER_OF_MOLOTOVS > 0) this.throwMolotov();
+		}
+	},
+
+	render: function() {
+		// Debug FPS
+	  	//this.game.debug.text(this.game.time.fps + " FPS" || '--', 2, 14, "#ffffff");
+	  	this.game.debug.text("VIDA: " + this.player.health, 10, 30, "#ffffff");
+	  	this.game.debug.text("x " + this.NUMBER_OF_MOLOTOVS, this.game.width - 50, 30, "#ffffff");
+	},
+
+	update_player: function() {
+		this.physics.arcade.collide(this.player, this.lCollision); // Make the player collide with the collision layer
+		this.physics.arcade.overlap(this.player, this.molotov_itens, this.collectMolotov, null, this); // Collect molotovs
+		this.physics.arcade.overlap(this.player, this.fireSprites, function() {
+			this.hitPlayer(5);
+		}, null, this);
+
+		this.physics.arcade.collide(this.player, this.gendarmePool, function() {
+			this.hitPlayer(10);
+		}, null, this);
+
+		// If player dies
+		if(this.player.health == 0) {
+			this.fire_loop.stop();
+			this.main_song.stop();
+			this.state.start("MainMenu");
+		}
+
+		if(this.player.body.blocked.down) this.onGround = true;
+		else this.onGround = false;
+
 		// Sprite transform
 		if(this.facingLeft == true) this.player.scale.x = -1;
 		else this.player.scale.x = 1
+	},
+
+	update_gendarmes: function() {
+		this.physics.arcade.collide(this.gendarmePool, this.lCollision);
+		this.physics.arcade.overlap(this.gendarmePool, this.fireSprites, function(gendarme, fire) {
+			if(this.game.time.now - gendarme.lastTimeHit > this.HIT_DELAY && gendarme.hp > 0) {
+				gendarme.lastTimeHit = this.game.time.now;
+				gendarme.hp -= 5;
+				if(gendarme.hp < 0) gendarme.hp = 0;
+			}
+		}, null, this);
+
+		this.gendarmePool.forEachAlive(function(gendarme){
+			var dst_gendarme_player = Math.sqrt(Math.pow(gendarme.x - this.player.x, 2) + Math.pow(gendarme.y - this.player.y, 2));
+			if (dst_gendarme_player < 900) {
+				if (this.player.x < gendarme.x) {
+					gendarme.body.acceleration.x = -400;
+					gendarme.turnedLeft = true;
+				}
+				else {
+					gendarme.body.acceleration.x = 400;
+					gendarme.turnedLeft = false;
+				}
+
+				if(gendarme.onGround && dst_gendarme_player > 100 && (gendarme.body.blocked.left || gendarme.body.blocked.right)) {
+					gendarme.body.velocity.y = -400;
+				}
+
+				if (gendarme.body.blocked.down) gendarme.onGround = true;
+				else gendarme.onGround = false;
+
+				if (gendarme.turnedLeft) gendarme.scale.x = -1;
+				else gendarme.scale.x = 1;
+
+				if(gendarme.hp <= 0) gendarme.kill();
+			}
+		}, this);
+		
 	},
 
 	update_molotovs: function() {
@@ -197,7 +300,7 @@ GameControl.InGame.prototype = {
 						tile_hitY++;
 						tile = this.map.getTile(i, tile_hitY + 1, 'collision', true);
 					}
-					this.getFire(i*this.TILE_WIDTH, tile_hitY*this.TILE_HEIGHT, hit_sin);
+					this.getFire(i*this.TILE_WIDTH, tile_hitY*this.TILE_HEIGHT, hit_sin, false);
 					hit_sin *= 1.45;
 				}
 			}
@@ -213,7 +316,7 @@ GameControl.InGame.prototype = {
 						tile = this.map.getTile(i, tile_hitY + 1, 'collision', true);
 					}
 
-					this.getFire(i*this.TILE_WIDTH, tile_hitY*this.TILE_HEIGHT, hit_sin);
+					this.getFire(i*this.TILE_WIDTH, tile_hitY*this.TILE_HEIGHT, hit_sin, false);
 					hit_sin *= 1.45;
 				}
 			}
@@ -235,11 +338,6 @@ GameControl.InGame.prototype = {
 			molotov.fire_emitter.y = molotov.y;
 			molotov.fire_emitter.emitParticle();
 		}, this);
-
-		// Throw molotov
-		if(this.NUMBER_OF_MOLOTOVS > 0 && this.game.input.activePointer.isDown) {
-			this.throwMolotov();
-		}
 	},
 
 	update_fires: function() {
@@ -251,20 +349,17 @@ GameControl.InGame.prototype = {
 			 	if(this.maxVol > 0.55) this.maxVol = 0.55;
 			}
 			fire.emitParticle();
-			if(fire.alpha < 0.05) fire.kill();
+			if(fire.alpha < 0.15) fire.spr.kill();
+			if(fire.alpha < 0.05) {
+				fire.kill();
+			}
 			else fire.alpha *= 0.997;
 		}, this);
 		if(dst_fire < 50) {
 			this.fire_loop.volume = this.maxVol;
-
-			// Player gets hit when he touches fire
-			if(this.maxVol > 0.15 && this.game.time.now - this.lastTimeHit > this.HIT_DELAY && this.player.health > 0) {
-				this.lastTimeHit = this.game.time.now;
-				this.player.health -= 10;
-			}
 		}
-		else if(dst_fire < 900) {
-		 	this.fire_loop.volume = Math.pow(250/dst_fire, 2);
+		else if(dst_fire < 1000) {
+		 	this.fire_loop.volume = Math.pow(150/dst_fire, 2);
 		 	if(this.fire_loop.volume > this.maxVol) this.fire_loop.volume = this.maxVol;
 		}
 		else this.fire_loop.volume = 0;
@@ -306,7 +401,7 @@ GameControl.InGame.prototype = {
 		molotov.kill();	
 	},
 
-	getFire: function(x, y, size) {
+	getFire: function(x, y, size, UPDATE_POS_FLAG) {
   		var fire = this.fires.getFirstDead();
   		if(fire == null || fire == undefined) return;
   		fire.revive();
@@ -318,5 +413,45 @@ GameControl.InGame.prototype = {
 		fire.setAlpha(0.9, 0.0, 1000);
 		fire.maxParticleSpeed = new Phaser.Point(100, 0);
   		fire.minParticleSpeed = new Phaser.Point(-100, -220*Math.abs(size) - 100);
+  		fire.updatePos = UPDATE_POS_FLAG;
+
+  		
+  		if(fire.spr == null || fire.spr == undefined) return;
+  		fire.spr.revive();
+    	fire.spr.checkWorldBounds = true;
+    	fire.spr.outOfBoundsKill = true;
+    	fire.spr.reset(x, y);
+	},
+
+	hitPlayer: function(hp) {
+		if(this.game.time.now - this.player.lastTimeHit > this.HIT_DELAY && this.player.health > 0) {
+			this.player.lastTimeHit = this.game.time.now;
+			this.player.health -= hp;
+			if(this.player.health < 0) this.player.health = 0;
+
+			if (this.facingLeft) {
+				this.player.body.velocity.y = -300;
+				this.player.body.velocity.x = this.MAX_SPEED;
+			}
+			else {
+				this.player.body.velocity.y = -300;
+				this.player.body.velocity.x = -this.MAX_SPEED;
+			}
+		}
+	},
+
+	addGendarme: function() {
+		if (this.game.time.now - this.lastGendarmeAddedAt < this.THROW_DELAY) return;
+    	this.lastGendarmeAddedAt = this.game.time.now;
+    	var gendarme = this.gendarmePool.getFirstDead();
+    	if (gendarme == null || gendarme == undefined) return;
+    	gendarme.revive();
+    	gendarme.hp = 30;
+    	gendarme.triedJump = false;
+		gendarme.onGround = false;
+		gendarme.turnedLeft = false;
+		gendarme.lastTimeHit = 0;
+    	gendarme.reset(this.input.mousePointer.worldX, this.input.mousePointer.worldY);
+    	gendarme.animations.play('blink');
 	}
 };
