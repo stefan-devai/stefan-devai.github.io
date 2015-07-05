@@ -19,6 +19,7 @@ GameControl.InGame = function(game) {
 	this.onGround = false;
 	this.pointerRot = 0;
 	this.maxVol = 0.55;
+	this.boxTile;
 };
 
 GameControl.InGame.prototype = {
@@ -58,6 +59,8 @@ GameControl.InGame.prototype = {
 		this.player.smoothed = false;
 		this.player.health = 100;
 		this.player.lastTimeHit = 0;
+		this.player.isCarryingBox = false;
+		this.player.boxDelay = 0;
 
 		this.game.physics.enable(this.player, Phaser.Physics.ARCADE);
 		this.player.body.collideWorldBounds = true;
@@ -155,6 +158,12 @@ GameControl.InGame.prototype = {
 			fire.kill();
 		}
 
+		// BOX settings
+		this.carryingBox = this.game.add.sprite(0, 0, 'spritesheet', 9);
+		this.game.physics.enable(this.carryingBox, Phaser.Physics.ARCADE);
+		this.carryingBox.immovable = true;
+		this.carryingBox.kill();
+
 		// SOUND settings
 		this.main_song = this.add.audio('barricadas', 0.25, true);
 		this.glass_break = this.add.audio('glass-break', 0.6, false);
@@ -196,6 +205,11 @@ GameControl.InGame.prototype = {
 			this.player.body.acceleration.x = 0;
 		}
 
+		if(this.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR)) {
+			// Carrying box system
+			this.carryBox();
+		}
+
 		// Throw molotov
 		if (this.game.input.activePointer.isDown) {
 			if (this.input.keyboard.isDown(Phaser.Keyboard.G)) {
@@ -210,6 +224,7 @@ GameControl.InGame.prototype = {
 	  	//this.game.debug.text(this.game.time.fps + " FPS" || '--', 2, 14, "#ffffff");
 	  	this.game.debug.text("VIDA: " + this.player.health, 10, 30, "#ffffff");
 	  	this.game.debug.text("x " + this.NUMBER_OF_MOLOTOVS, this.game.width - 50, 30, "#ffffff");
+	  	//this.game.debug.body(this.player);
 	},
 
 	update_player: function() {
@@ -234,8 +249,20 @@ GameControl.InGame.prototype = {
 		else this.onGround = false;
 
 		// Sprite transform
-		if(this.facingLeft == true) this.player.scale.x = -1;
-		else this.player.scale.x = 1
+		if(this.facingLeft) this.player.scale.x = -1;
+		else this.player.scale.x = 1;
+
+		// Carrying Box
+		if (this.player.isCarryingBox) {
+			if(this.facingLeft) {
+				this.carryingBox.x = this.player.x - 20;
+				this.carryingBox.y = this.player.y - 45;
+			}
+			else {
+				this.carryingBox.x = this.player.x - 15;
+				this.carryingBox.y = this.player.y - 45;
+			}
+		}
 	},
 
 	update_gendarmes: function() {
@@ -453,5 +480,99 @@ GameControl.InGame.prototype = {
 		gendarme.lastTimeHit = 0;
     	gendarme.reset(this.input.mousePointer.worldX, this.input.mousePointer.worldY);
     	gendarme.animations.play('blink');
+	},
+
+	carryBox: function() {
+		if (this.player.isCarryingBox && this.game.time.now - this.player.boxDelay > this.HIT_DELAY) {
+			this.player.boxDelay = this.game.time.now;
+			var current_tileX = this.lCollision.getTileX(this.player.x);
+			var current_tileY = this.lCollision.getTileY(this.player.y);
+			if(this.facingLeft) {
+				var tile1 = this.map.getTile(current_tileX - 1, current_tileY + 1, 'collision', true);
+				var tile2 = this.map.getTile(current_tileX - 1, current_tileY, 'collision', true);
+				var tile3 = this.map.getTile(current_tileX - 1, current_tileY - 1, 'collision', true);
+
+				if (tile1.index != -1 && tile2.index == -1) {
+					this.leaveBox(current_tileX - 1, current_tileY);
+				}
+				else if (tile2.index != -1 && tile3.index == -1) {
+					this.leaveBox(current_tileX - 1, current_tileY - 1);
+				}
+			}
+			else {
+				var tile1 = this.map.getTile(current_tileX + 1, current_tileY + 1, 'collision', true);
+				var tile2 = this.map.getTile(current_tileX + 1, current_tileY, 'collision', true);
+				var tile3 = this.map.getTile(current_tileX + 1, current_tileY - 1, 'collision', true);
+
+				if (tile1.index != -1 && tile2.index == -1) {
+					this.leaveBox(current_tileX + 1, current_tileY);
+				}
+				else if (tile2.index != -1 && tile3.index == -1) {
+					this.leaveBox(current_tileX + 1, current_tileY - 1);
+				}
+			}
+
+			
+		}
+		else if (!this.player.isCarryingBox && this.game.time.now - this.player.boxDelay > this.HIT_DELAY) {
+			this.player.boxDelay = this.game.time.now;
+			var current_tileX = this.lCollision.getTileX(this.player.x);
+			var current_tileY = this.lCollision.getTileY(this.player.y);
+			if(this.facingLeft) {
+				var tile1 = this.map.getTile(current_tileX - 1, current_tileY, 'collision', true);
+				var tile2 = this.map.getTile(current_tileX - 1, current_tileY - 1, 'collision', true);
+				var tile3 = this.map.getTile(current_tileX - 1, current_tileY - 2, 'collision', true);
+
+				if (tile1.index == 10 && tile2.index == -1) {
+					this.boxTile = this.map.copy(current_tileX - 1, current_tileY, 1, 1, 'collision');
+					this.map.removeTile(current_tileX - 1, current_tileY, 'collision');
+					this.addBox2Player();
+				}
+				else if (tile2.index == 10 && tile3.index == -1) {
+					this.boxTile = this.map.copy(current_tileX - 1, current_tileY - 1, 1, 1, 'collision');
+					this.map.removeTile(current_tileX - 1, current_tileY - 1, 'collision');
+					this.addBox2Player();
+				}
+			}
+			else {
+				var tile1 = this.map.getTile(current_tileX + 1, current_tileY, 'collision', true);
+				var tile2 = this.map.getTile(current_tileX + 1, current_tileY - 1, 'collision', true);
+				var tile3 = this.map.getTile(current_tileX + 1, current_tileY - 2, 'collision', true);
+
+				if (tile1.index == 10 && tile2.index == -1) {
+					this.boxTile = this.map.copy(current_tileX + 1, current_tileY, 1, 1, 'collision');
+					this.map.removeTile(current_tileX + 1, current_tileY, 'collision');
+					this.addBox2Player();
+				}
+				else if (tile2.index == 10 && tile3.index == -1) {
+					this.boxTile = this.map.copy(current_tileX + 1, current_tileY - 1, 1, 1, 'collision');
+					this.map.removeTile(current_tileX + 1, current_tileY - 1, 'collision');
+					this.addBox2Player();
+				} 
+			}
+		}
+	},
+
+	addBox2Player: function() {
+		this.carryingBox.revive();
+		this.carryingBox.reset(this.player.x, this.player.y - 45);
+
+		this.player.body.maxVelocity.setTo(this.MAX_SPEED - 100, this.MAX_SPEED * 10);
+		//this.player.body.setSize(25, 95, 0, 0);
+		this.JUMP_SPEED = -300;
+		this.ACCELERATION = 300;
+		this.DRAG = 2000;
+		this.player.isCarryingBox = true;
+	},
+
+	leaveBox: function(x, y) {
+		this.map.paste(x, y, this.boxTile, 'collision');
+		this.player.isCarryingBox = false;
+		this.player.body.maxVelocity.setTo(this.MAX_SPEED, this.MAX_SPEED * 10);
+		this.player.body.setSize(25, 50, 0, 5);
+		this.JUMP_SPEED = -500;
+		this.ACCELERATION = 1500;
+		this.DRAG = 1400;
+		this.carryingBox.kill();
 	}
 };
