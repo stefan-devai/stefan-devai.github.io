@@ -19,7 +19,11 @@ GameControl.InGame = function(game) {
 	this.onGround = false;
 	this.pointerRot = 0;
 	this.maxVol = 0.55;
-	this.boxTile;
+	this.objTile;
+
+	// Indexes and factors of carriable objects. Must be in the same order.
+	this.carriableObjs = [10, 11];
+	this.carriableObjsFactors = [0.6, 0.4];
 };
 
 GameControl.InGame.prototype = {
@@ -59,8 +63,9 @@ GameControl.InGame.prototype = {
 		this.player.smoothed = false;
 		this.player.health = 100;
 		this.player.lastTimeHit = 0;
-		this.player.isCarryingBox = false;
-		this.player.boxDelay = 0;
+		this.player.isCarryingObj = false;
+		this.player.objDelay = 0;
+		this.player.currentObj = -1;
 
 		this.game.physics.enable(this.player, Phaser.Physics.ARCADE);
 		this.player.body.collideWorldBounds = true;
@@ -159,10 +164,10 @@ GameControl.InGame.prototype = {
 		}
 
 		// BOX settings
-		this.carryingBox = this.game.add.sprite(0, 0, 'spritesheet', 9);
-		this.game.physics.enable(this.carryingBox, Phaser.Physics.ARCADE);
-		this.carryingBox.immovable = true;
-		this.carryingBox.kill();
+		this.carryingObj = this.game.add.sprite(0, 0, 'spritesheet', 9);
+		this.game.physics.enable(this.carryingObj, Phaser.Physics.ARCADE);
+		this.carryingObj.immovable = true;
+		this.carryingObj.kill();
 
 		// SOUND settings
 		this.main_song = this.add.audio('barricadas', 0.25, true);
@@ -206,8 +211,8 @@ GameControl.InGame.prototype = {
 		}
 
 		if(this.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR)) {
-			// Carrying box system
-			this.carryBox();
+			// Carrying system
+			this.carryObj();
 		}
 
 		// Throw molotov
@@ -253,14 +258,14 @@ GameControl.InGame.prototype = {
 		else this.player.scale.x = 1;
 
 		// Carrying Box
-		if (this.player.isCarryingBox) {
+		if (this.player.isCarryingObj) {
 			if(this.facingLeft) {
-				this.carryingBox.x = this.player.x - 20;
-				this.carryingBox.y = this.player.y - 45;
+				this.carryingObj.x = this.player.x - 20;
+				this.carryingObj.y = this.player.y - 45;
 			}
 			else {
-				this.carryingBox.x = this.player.x - 15;
-				this.carryingBox.y = this.player.y - 45;
+				this.carryingObj.x = this.player.x - 15;
+				this.carryingObj.y = this.player.y - 45;
 			}
 		}
 	},
@@ -482,9 +487,10 @@ GameControl.InGame.prototype = {
     	gendarme.animations.play('blink');
 	},
 
-	carryBox: function() {
-		if (this.player.isCarryingBox && this.game.time.now - this.player.boxDelay > this.HIT_DELAY) {
-			this.player.boxDelay = this.game.time.now;
+	carryObj: function() {
+		// Leave object
+		if (this.player.isCarryingObj && this.game.time.now - this.player.objDelay > this.HIT_DELAY) {
+			this.player.objDelay = this.game.time.now;
 			var current_tileX = this.lCollision.getTileX(this.player.x);
 			var current_tileY = this.lCollision.getTileY(this.player.y);
 			if(this.facingLeft) {
@@ -493,10 +499,10 @@ GameControl.InGame.prototype = {
 				var tile3 = this.map.getTile(current_tileX - 1, current_tileY - 1, 'collision', true);
 
 				if (tile1.index != -1 && tile2.index == -1) {
-					this.leaveBox(current_tileX - 1, current_tileY);
+					this.leaveObj(current_tileX - 1, current_tileY);
 				}
 				else if (tile2.index != -1 && tile3.index == -1) {
-					this.leaveBox(current_tileX - 1, current_tileY - 1);
+					this.leaveObj(current_tileX - 1, current_tileY - 1);
 				}
 			}
 			else {
@@ -505,74 +511,78 @@ GameControl.InGame.prototype = {
 				var tile3 = this.map.getTile(current_tileX + 1, current_tileY - 1, 'collision', true);
 
 				if (tile1.index != -1 && tile2.index == -1) {
-					this.leaveBox(current_tileX + 1, current_tileY);
+					this.leaveObj(current_tileX + 1, current_tileY);
 				}
 				else if (tile2.index != -1 && tile3.index == -1) {
-					this.leaveBox(current_tileX + 1, current_tileY - 1);
+					this.leaveObj(current_tileX + 1, current_tileY - 1);
 				}
-			}
-
-			
+			}		
 		}
-		else if (!this.player.isCarryingBox && this.game.time.now - this.player.boxDelay > this.HIT_DELAY) {
-			this.player.boxDelay = this.game.time.now;
+		// Carry object
+		else if (!this.player.isCarryingObj && this.game.time.now - this.player.objDelay > this.HIT_DELAY) {
+			this.player.objDelay = this.game.time.now;
 			var current_tileX = this.lCollision.getTileX(this.player.x);
 			var current_tileY = this.lCollision.getTileY(this.player.y);
 			if(this.facingLeft) {
 				var tile1 = this.map.getTile(current_tileX - 1, current_tileY, 'collision', true);
 				var tile2 = this.map.getTile(current_tileX - 1, current_tileY - 1, 'collision', true);
 				var tile3 = this.map.getTile(current_tileX - 1, current_tileY - 2, 'collision', true);
+				var indexOfCarriables1 = this.carriableObjs.indexOf(tile1.index);
+				var indexOfCarriables2 = this.carriableObjs.indexOf(tile2.index);
 
-				if (tile1.index == 10 && tile2.index == -1) {
-					this.boxTile = this.map.copy(current_tileX - 1, current_tileY, 1, 1, 'collision');
+				if (indexOfCarriables1 != -1 && tile2.index == -1) {
+					this.objTile = this.map.copy(current_tileX - 1, current_tileY, 1, 1, 'collision');
 					this.map.removeTile(current_tileX - 1, current_tileY, 'collision');
-					this.addBox2Player();
+					this.addObj2Player(this.carriableObjs[indexOfCarriables1] - 1, this.carriableObjsFactors[indexOfCarriables1]);
 				}
-				else if (tile2.index == 10 && tile3.index == -1) {
-					this.boxTile = this.map.copy(current_tileX - 1, current_tileY - 1, 1, 1, 'collision');
+				else if (indexOfCarriables2 != -1 && tile3.index == -1) {
+					this.objTile = this.map.copy(current_tileX - 1, current_tileY - 1, 1, 1, 'collision');
 					this.map.removeTile(current_tileX - 1, current_tileY - 1, 'collision');
-					this.addBox2Player();
+					this.addObj2Player(this.carriableObjs[indexOfCarriables2] - 1, this.carriableObjsFactors[indexOfCarriables2]);
 				}
 			}
 			else {
 				var tile1 = this.map.getTile(current_tileX + 1, current_tileY, 'collision', true);
 				var tile2 = this.map.getTile(current_tileX + 1, current_tileY - 1, 'collision', true);
 				var tile3 = this.map.getTile(current_tileX + 1, current_tileY - 2, 'collision', true);
+				var indexOfCarriables1 = this.carriableObjs.indexOf(tile1.index);
+				var indexOfCarriables2 = this.carriableObjs.indexOf(tile2.index);
 
-				if (tile1.index == 10 && tile2.index == -1) {
-					this.boxTile = this.map.copy(current_tileX + 1, current_tileY, 1, 1, 'collision');
+				if (indexOfCarriables1 != -1 && tile2.index == -1) {
+					this.objTile = this.map.copy(current_tileX + 1, current_tileY, 1, 1, 'collision');
 					this.map.removeTile(current_tileX + 1, current_tileY, 'collision');
-					this.addBox2Player();
+					this.addObj2Player(this.carriableObjs[indexOfCarriables1] - 1, this.carriableObjsFactors[indexOfCarriables1]);
 				}
-				else if (tile2.index == 10 && tile3.index == -1) {
-					this.boxTile = this.map.copy(current_tileX + 1, current_tileY - 1, 1, 1, 'collision');
+				else if (indexOfCarriables2 != -1 && tile3.index == -1) {
+					this.objTile = this.map.copy(current_tileX + 1, current_tileY - 1, 1, 1, 'collision');
 					this.map.removeTile(current_tileX + 1, current_tileY - 1, 'collision');
-					this.addBox2Player();
-				} 
+					this.addObj2Player(this.carriableObjs[indexOfCarriables2] - 1, this.carriableObjsFactors[indexOfCarriables2]);
+				}
 			}
 		}
 	},
 
-	addBox2Player: function() {
-		this.carryingBox.revive();
-		this.carryingBox.reset(this.player.x, this.player.y - 45);
+	addObj2Player: function(tile_index, loss_factor) {
+		this.carryingObj.revive();
+		this.carryingObj.frame = tile_index;
+		this.carryingObj.reset(this.player.x, this.player.y - 45);
+		this.currentObj = tile_index + 1;
 
-		this.player.body.maxVelocity.setTo(this.MAX_SPEED - 100, this.MAX_SPEED * 10);
-		//this.player.body.setSize(25, 95, 0, 0);
-		this.JUMP_SPEED = -300;
-		this.ACCELERATION = 300;
-		this.DRAG = 2000;
-		this.player.isCarryingBox = true;
+		this.player.body.maxVelocity.setTo(this.MAX_SPEED*loss_factor, this.MAX_SPEED * 10 * loss_factor);
+		this.JUMP_SPEED = this.JUMP_SPEED * loss_factor;
+		this.ACCELERATION = this.ACCELERATION * loss_factor;
+		this.DRAG = this.DRAG * (1+loss_factor);
+		this.player.isCarryingObj = true;
 	},
 
-	leaveBox: function(x, y) {
-		this.map.paste(x, y, this.boxTile, 'collision');
-		this.player.isCarryingBox = false;
+	leaveObj: function(x, y) {
+		this.map.paste(x, y, this.objTile, 'collision');
+		this.player.isCarryingObj = false;
+		this.player.currentObj = -1;
 		this.player.body.maxVelocity.setTo(this.MAX_SPEED, this.MAX_SPEED * 10);
-		this.player.body.setSize(25, 50, 0, 5);
 		this.JUMP_SPEED = -500;
 		this.ACCELERATION = 1500;
 		this.DRAG = 1400;
-		this.carryingBox.kill();
+		this.carryingObj.kill();
 	}
 };
