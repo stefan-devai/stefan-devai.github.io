@@ -8,7 +8,7 @@ GameControl.Init.prototype = {
 		this.input.maxPointers = 1;
 
 		// Pause the game when focus is lost
-		this.stage.disableVisibilityChange = false;
+		this.stage.disableVisibilityChange = true;
 
 		// Desktop preferences
 		this.scale.pageAlignHorizontally = true;
@@ -16,7 +16,8 @@ GameControl.Init.prototype = {
 
 	preload: function() {
 		// Preloader state assets
-		this.load.image('PreloaderBG', 'src/img/loadbg.png');
+		this.load.image('PabloBG', 'src/img/pablobg.png');
+		this.load.image('PreloaderBarCase', 'src/img/plcase.png');
 		this.load.image('PreloaderBar', 'src/img/loadbar.png');
 	},
 

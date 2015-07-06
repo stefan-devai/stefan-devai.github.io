@@ -51,7 +51,6 @@ GameControl.InGame.prototype = {
 		this.stage.backgroundColor = '#2e2d2d';
 		this.game.input.keyboard.addKeyCapture([Phaser.Keyboard.LEFT, Phaser.Keyboard.RIGHT, Phaser.Keyboard.UP, Phaser.Keyboard.DOWN, Phaser.Keyboard.A, Phaser.Keyboard.W, Phaser.Keyboard.S, Phaser.Keyboard.D, Phaser.Keyboard.SPACEBAR]);
 		this.time.advancedTiming = true;
-		//this.game.physics.arcade.gravity.y = this.GRAVITY;
 
 		// MAP settings - BACKGROUND
     	this.map = this.add.tilemap('map');
@@ -59,7 +58,7 @@ GameControl.InGame.prototype = {
 		this.lBackground = this.map.createLayer('background');
 
 		// PLAYER settings
-		this.player = this.game.add.sprite(0, 390, 'pablo', 0);
+		this.player = this.game.add.sprite(64, 360, 'pablo', 0);
 		this.player.anchor.setTo(0.5, 0.5);
 		this.player.smoothed = false;
 		this.player.health = 100;
@@ -245,11 +244,10 @@ GameControl.InGame.prototype = {
 	},
 
 	render: function() {
-		// Debug FPS
 	  	//this.game.debug.text(this.game.time.fps + " FPS" || '--', 2, 14, "#ffffff");
-	  	this.game.debug.text("VIDA: " + this.player.health, 10, 30, "#ffffff");
-	  	this.game.debug.text("x " + this.NUMBER_OF_MOLOTOVS, this.game.width - 50, 30, "#ffffff");
 	  	//this.game.debug.body(this.player);
+	  	this.game.debug.text("VIDA: " + this.player.health, 10, 30, "#ffffff");
+	  	this.game.debug.text("x " + this.NUMBER_OF_MOLOTOVS, this.game.width - 50, 30, "#ffffff");	
 	},
 
 	update_player: function() {
