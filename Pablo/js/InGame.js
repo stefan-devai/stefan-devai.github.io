@@ -184,7 +184,7 @@ GameControl.InGame.prototype = {
 		this.glass_break = this.add.audio('glass-break', 0.6, false);
 		this.fire_loop = this.add.audio('fire-loop', 0.0, true);
 
-		//this.main_song.play();
+		this.main_song.play();
 		this.fire_loop.play();
 
 		// GUI settings
