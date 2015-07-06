@@ -16,7 +16,7 @@ GameControl.Load.prototype = {
 
 		// Game assets
 		this.load.spritesheet('spritesheet', 'src/sprites/spritesheet.png', 32, 32);
-		this.load.spritesheet('player', 'src/sprites/character.png', 40, 60);
+		this.load.spritesheet('pablo', 'src/sprites/pablo_sprites.png', 42, 58);
 		this.load.spritesheet('robot1', 'src/sprites/robot1.png', 28, 64);
 		this.load.tilemap('map', 'src/maps/tmapf.json', null, Phaser.Tilemap.TILED_JSON);
 

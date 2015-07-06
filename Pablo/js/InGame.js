@@ -20,10 +20,11 @@ GameControl.InGame = function(game) {
 	this.pointerRot = 0;
 	this.maxVol = 0.55;
 	this.objTile;
+	this.firstGameClick = false;
 
 	// Indexes and factors of carriable objects. Must be in the same order.
 	this.carriableObjs = [10, 11];
-	this.carriableObjsFactors = [0.6, 0.4];
+	this.carriableObjsFactors = [0.85, 0.7];
 };
 
 GameControl.InGame.prototype = {
@@ -33,8 +34,8 @@ GameControl.InGame.prototype = {
 		this.TILE_HEIGHT = 32;
 
 		this.GRAVITY = 1200;
-		this.JUMP_SPEED = -500;
-		this.MAX_SPEED = 300;
+		this.JUMP_SPEED = -430;
+		this.MAX_SPEED = 150;
 		this.ACCELERATION = 1500;
 		this.DRAG = 1400;
 
@@ -48,7 +49,7 @@ GameControl.InGame.prototype = {
 		this.lastGendarmeAddedAt = 0;
 
 		this.stage.backgroundColor = '#2e2d2d';
-		this.game.input.keyboard.addKeyCapture([Phaser.Keyboard.LEFT, Phaser.Keyboard.RIGHT, Phaser.Keyboard.UP, Phaser.Keyboard.DOWN]);
+		this.game.input.keyboard.addKeyCapture([Phaser.Keyboard.LEFT, Phaser.Keyboard.RIGHT, Phaser.Keyboard.UP, Phaser.Keyboard.DOWN, Phaser.Keyboard.A, Phaser.Keyboard.W, Phaser.Keyboard.S, Phaser.Keyboard.D, Phaser.Keyboard.SPACEBAR]);
 		this.time.advancedTiming = true;
 		//this.game.physics.arcade.gravity.y = this.GRAVITY;
 
@@ -58,7 +59,7 @@ GameControl.InGame.prototype = {
 		this.lBackground = this.map.createLayer('background');
 
 		// PLAYER settings
-		this.player = this.game.add.sprite(0, 390, 'player');
+		this.player = this.game.add.sprite(0, 390, 'pablo', 0);
 		this.player.anchor.setTo(0.5, 0.5);
 		this.player.smoothed = false;
 		this.player.health = 100;
@@ -66,6 +67,7 @@ GameControl.InGame.prototype = {
 		this.player.isCarryingObj = false;
 		this.player.objDelay = 0;
 		this.player.currentObj = -1;
+		this.player.preparedMolo = false;
 
 		this.game.physics.enable(this.player, Phaser.Physics.ARCADE);
 		this.player.body.collideWorldBounds = true;
@@ -74,6 +76,14 @@ GameControl.InGame.prototype = {
 		this.player.body.maxVelocity.setTo(this.MAX_SPEED, this.MAX_SPEED * 10);
 		this.player.body.drag.setTo(this.DRAG, 0);
 		this.player.body.setSize(25, 50, 0, 5);
+
+		this.player.animations.add('idle', [0, 1, 0, 0, 0, 0], 3, true);
+		this.player.animations.add('walk', [2, 3, 4, 5, 6], 10, true);
+		this.player.animations.add('jump', [7, 8, 9, 10, 11], 10, false);
+		this.player.animations.add('fall', [10, 11], 10, true);
+		this.player.animations.add('molo-prepare', [12, 13, 14, 15, 16, 17, 18], 10, false);
+		this.player.animations.add('molo-ready', [19, 20], 10, true);
+		this.player.animations.add('molo-throw', [21, 22, 22, 22], 14, false);
 
     	this.camera.follow(this.player, Phaser.Camera.FOLLOW_PLATFORMER);
 
@@ -174,7 +184,7 @@ GameControl.InGame.prototype = {
 		this.glass_break = this.add.audio('glass-break', 0.6, false);
 		this.fire_loop = this.add.audio('fire-loop', 0.0, true);
 
-		this.main_song.play();
+		//this.main_song.play();
 		this.fire_loop.play();
 
 		// GUI settings
@@ -195,15 +205,18 @@ GameControl.InGame.prototype = {
 		// Jump
 		if(this.onGround && (this.input.keyboard.downDuration(Phaser.Keyboard.W, 10) || this.input.keyboard.downDuration(Phaser.Keyboard.UP, 10))) {
 			this.player.body.velocity.y = this.JUMP_SPEED;
+			this.player.animations.play('jump');
 		}
 
 		// Left/Right movement
 		if(this.input.keyboard.isDown(Phaser.Keyboard.A) || this.input.keyboard.isDown(Phaser.Keyboard.LEFT)) {
 			this.player.body.acceleration.x = -this.ACCELERATION;
+			if(this.player.body.velocity.y == 0) this.player.animations.play('walk');
 			if(this.facingLeft == false) this.facingLeft = true;
 		}
 		else if(this.input.keyboard.isDown(Phaser.Keyboard.D) || this.input.keyboard.isDown(Phaser.Keyboard.RIGHT)) {
 			this.player.body.acceleration.x = this.ACCELERATION;
+			if(this.player.body.velocity.y == 0) this.player.animations.play('walk');
 			if(this.facingLeft == true) this.facingLeft = false;
 		}
 		else {
@@ -220,8 +233,15 @@ GameControl.InGame.prototype = {
 			if (this.input.keyboard.isDown(Phaser.Keyboard.G)) {
 				this.addGendarme();
 			}
-			else if (this.NUMBER_OF_MOLOTOVS > 0) this.throwMolotov();
+			else if (this.NUMBER_OF_MOLOTOVS > 0) {
+				if (!this.player.preparedMolo) this.player.animations.play('molo-prepare');
+				else this.player.animations.play('molo-ready');
+				if (this.player.animations.currentAnim.frame == 18) this.player.preparedMolo = true;
+			}
 		}
+		if (this.game.input.activePointer.justReleased()) {
+			if (this.NUMBER_OF_MOLOTOVS > 0 && this.player.preparedMolo) this.throwMolotov();
+		} 
 	},
 
 	render: function() {
@@ -250,8 +270,17 @@ GameControl.InGame.prototype = {
 			this.state.start("MainMenu");
 		}
 
-		if(this.player.body.blocked.down) this.onGround = true;
-		else this.onGround = false;
+		if(this.player.body.blocked.down) {
+			this.onGround = true;
+			if(Math.abs(this.player.body.acceleration.x) < 0.1) {
+				if(this.player.animations.currentAnim.name != 'molo-prepare' && this.player.animations.currentAnim.name != 'molo-ready' && this.player.animations.currentAnim.name != 'molo-throw') this.player.animations.play('idle');
+				else if (this.player.animations.currentAnim.isFinished) this.player.animations.play('idle');
+			} 
+		} 
+		else {
+			this.onGround = false;
+			if(this.player.body.velocity.y > 260) this.player.animations.play('fall');
+		}
 
 		// Sprite transform
 		if(this.facingLeft) this.player.scale.x = -1;
@@ -401,6 +430,12 @@ GameControl.InGame.prototype = {
 		if(this.lastMolotovShotAt == undefined) this.lastMolotovShotAt = 0;
 		if(this.game.time.now - this.lastMolotovShotAt < this.THROW_DELAY) return;
     	this.lastMolotovShotAt = this.game.time.now;
+    	if(!this.firstGameClick) {
+    		this.firstGameClick = true;
+    		return;
+    	}
+		this.player.preparedMolo = false;
+    	this.player.animations.play('molo-throw');
 
     	var molotov = this.molotovPool.getFirstDead();
 
@@ -580,7 +615,7 @@ GameControl.InGame.prototype = {
 		this.player.isCarryingObj = false;
 		this.player.currentObj = -1;
 		this.player.body.maxVelocity.setTo(this.MAX_SPEED, this.MAX_SPEED * 10);
-		this.JUMP_SPEED = -500;
+		this.JUMP_SPEED = -430;
 		this.ACCELERATION = 1500;
 		this.DRAG = 1400;
 		this.carryingObj.kill();
