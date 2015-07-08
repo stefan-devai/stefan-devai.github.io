@@ -58,7 +58,7 @@ GameControl.InGame.prototype = {
 		this.lBackground = this.map.createLayer('background');
 
 		// PLAYER settings
-		this.player = this.game.add.sprite(64, 360, 'pablo', 0);
+		this.player = this.game.add.sprite(32, 800, 'pablo', 0);
 		this.player.anchor.setTo(0.5, 0.5);
 		this.player.smoothed = false;
 		this.player.health = 100;
@@ -88,40 +88,26 @@ GameControl.InGame.prototype = {
 
     	// GENDARME settings
     	this.gendarmePool = this.game.add.group();
-    	for (var i = 0; i < this.NUMBER_OF_GENDARMES; ++i) {
-    		var gendarme = this.game.add.sprite(0, 0, 'robot1');
-    		this.gendarmePool.add(gendarme);
+    	this.map.createFromObjects('obj', 401, 'robot1', 0, true, false, this.gendarmePool);
+    	this.gendarmePool.forEach(function(gendarme) {
     		gendarme.animations.add('blink', [0, 1], 5, true);
+    		gendarme.animations.play('blink');
     		gendarme.smoothed = false;
     		gendarme.anchor.setTo(0.5, 0.5);
+
+    		gendarme.hp = 30;
+    		gendarme.triedJump = false;
+    		gendarme.onGround = false;
+    		gendarme.turnedLeft = false;
+    		gendarme.lastTimeHit = 0;
+
     		this.game.physics.enable(gendarme, Phaser.Physics.ARCADE);
     		gendarme.body.gravity.y = this.GRAVITY;
     		gendarme.body.collideWorldBounds = true;
 			gendarme.body.allowRotation = false;
 			gendarme.body.maxVelocity.setTo(this.MAX_SPEED/4, this.MAX_SPEED * 5);
 			gendarme.body.drag.setTo(this.DRAG, 0);
-    		gendarme.kill();
-    	}
-
-    	var inig = this.gendarmePool.getFirstDead();
-    	inig.revive();
-    	inig.reset(2496, 480);
-    	inig.hp = 30;
-    	inig.triedJump = false;
-		inig.onGround = false;
-		inig.turnedLeft = false;
-		inig.lastTimeHit = 0;
-		inig.animations.play('blink');
-
-		var inig2 = this.gendarmePool.getFirstDead();
-    	inig2.revive();
-    	inig2.reset(1696, 672);
-    	inig2.hp = 30;
-    	inig2.triedJump = false;
-		inig2.onGround = false;
-		inig2.turnedLeft = false;
-		inig2.lastTimeHit = 0;
-		inig2.animations.play('blink');
+    	}, this);
 
     	// MOLOTOV settings
     	this.molotovPool = this.game.add.group();
@@ -253,9 +239,6 @@ GameControl.InGame.prototype = {
 	update_player: function() {
 		this.physics.arcade.collide(this.player, this.lCollision); // Make the player collide with the collision layer
 		this.physics.arcade.overlap(this.player, this.molotov_itens, this.collectMolotov, null, this); // Collect molotovs
-		this.physics.arcade.overlap(this.player, this.fireSprites, function() {
-			this.hitPlayer(5);
-		}, null, this);
 
 		this.physics.arcade.collide(this.player, this.gendarmePool, function() {
 			this.hitPlayer(10);
@@ -299,17 +282,27 @@ GameControl.InGame.prototype = {
 
 	update_gendarmes: function() {
 		this.physics.arcade.collide(this.gendarmePool, this.lCollision);
+		this.physics.arcade.collide(this.gendarmePool);
 		this.physics.arcade.overlap(this.gendarmePool, this.fireSprites, function(gendarme, fire) {
 			if(this.game.time.now - gendarme.lastTimeHit > this.HIT_DELAY && gendarme.hp > 0) {
 				gendarme.lastTimeHit = this.game.time.now;
 				gendarme.hp -= 5;
 				if(gendarme.hp < 0) gendarme.hp = 0;
+
+				if (gendarme.turnedLeft) {
+				gendarme.body.velocity.y = -300;
+				gendarme.body.velocity.x = this.MAX_SPEED;
+				}
+				else {
+					gendarme.body.velocity.y = -300;
+					gendarme.body.velocity.x = -this.MAX_SPEED;
+				}
 			}
 		}, null, this);
 
 		this.gendarmePool.forEachAlive(function(gendarme){
 			var dst_gendarme_player = Math.sqrt(Math.pow(gendarme.x - this.player.x, 2) + Math.pow(gendarme.y - this.player.y, 2));
-			if (dst_gendarme_player < 900) {
+			if (dst_gendarme_player < 400) {
 				if (this.player.x < gendarme.x) {
 					gendarme.body.acceleration.x = -400;
 					gendarme.turnedLeft = true;
