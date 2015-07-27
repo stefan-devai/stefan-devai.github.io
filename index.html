@@ -28,9 +28,19 @@
       <a class="site-title fade-out" href="/">STEFAN DEVAI<div class="title-underline"></div></a>
 
       <ul>
-        <li><a class="page-link fade-out " href="/projects/">Projects</a></li>
-        <li><a class="page-link fade-out " href="/gallery/">Gallery</a></li>
-        <li><a class="page-link fade-out " href="/about/">About</a></li>
+      	
+      		
+      			<li><a class="page-link fade-out " href="/projects">Projects</a></li>
+      		
+      	
+      		
+      			<li><a class="page-link fade-out " href="/gallery">Gallery</a></li>
+      		
+      	
+      		
+      			<li><a class="page-link fade-out " href="/about">About</a></li>
+      		
+      	
       </ul>
 
     </nav>
@@ -44,221 +54,17 @@
     <article class="post">
     <h2 class="post-title"><a class="post-link" href="/phaser/pablo/2015/07/26/molotov-system-in-phaser.html">[PABLO] Molotov System in Phaser</a></h2>
     <p class="post-meta">Jul 26, 2015</p>
-    <div class="home-post-content"><p><img src="/img/2015-07/pablo-molotov1.png" alt="" /></p>
+    
+    <div class="home-post-content">
+    	
+    		<p><img src="/img/2015-07/pablo-molotov1.png" alt="" /></p>
 
 <p>In this post I’m going to explain how the molotov system was implemented in <strong>Pablo</strong>. <a href="/games/Pablo" target="_blank">Click here</a> to try it for yourself if you haven’t yet. The controls work like this: click and hold to prepare the molotov, then release to throw it. Other controls are the usual ones for platformers - WASD/Arrows for player movement and space to lift/place boxes. There are some State Robots so you can try your aim in molotov throwing ;)</p>
 
-<h2 id="the-prototype">1. The prototype</h2>
 
-<iframe width="420" height="315" src="https://www.youtube.com/embed/fXTMWbvFX9k" frameborder="0" allowfullscreen=""></iframe>
-
-<p>The idea of a game based on molotov throwing came after reading about the anarchist struggle in Greece within all the political turbulence that the country is passing through. In this conjecture, Alexis Tsipras (Greece Prime Minister), supposedly belonging to a left party, accepted a bailout deal accompained by austerity packages after a national referendum a week before said NO to the decision taken by Tsipras. [1] People is often - if not always - betrayed by their governments, therefore only one way out is left for us: Struggle and organization by ourselves.</p>
-
-<p>Anyways, besides being a great tool in class struggle, I thought that molotovs would look very cool inside a game! So I opened photoshop and began sketching fires, a character, a molotov, grounds, &amp;c., until I had some nice sprites to work with. I wanted to create a gloomy ambient, kinda dark, that reminds me of how protests feel at night. As always, I’ve left to draw a background in another occasion, as it takes so long time for me, specially when working with pixel art.</p>
-
-<p>So before actually diving into the code I had the following prototype in my head:</p>
-
-<ul>
-  <li>The direction of a launch should depend on the angle between the player and the mouse position.</li>
-  <li>There should be a trail of fire particles following the bottle.</li>
-  <li>It leaves a fire trail after hitting the ground.</li>
-  <li>The width of the fire trail depends on the angle it hits the ground.</li>
-  <li>The height of the flames depends on the distance from the hit point.</li>
-</ul>
-
-<h2 id="detailed-implementation">2. Detailed implementation</h2>
-
-<p>Before anything, let me say that <a href="http://gamemechanicexplorer.com/">Game Mechanics Explorer</a> and <a href="http://phaser.io/examples">Phaser Examples</a> helped me a lot respectively in physics and in particles understanding within Phaser engine. Also, if you’re just starting with Phaser I’d suggest you to take a close look into the examples from the website, they’re a better way to learn the engine than many tutorials out there.</p>
-
-<p><em>You can get the full code for this game prototype in <a href="https://github.com/stefan-devai/stefan-devai.github.io/tree/master/games/Pablo">GitHub</a>.</em></p>
-
-<h3 id="molotov-group-creation">2.1 Molotov group creation</h3>
-
-<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="k">this</span><span class="p">.</span><span class="nx">molotovPool</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">add</span><span class="p">.</span><span class="nx">group</span><span class="p">();</span>
-<span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">NUMBER_OF_MOLOTOVS</span><span class="p">;</span> <span class="o">++</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
-	<span class="kd">var</span> <span class="nx">molotov</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">add</span><span class="p">.</span><span class="nx">sprite</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;spritesheet&#39;</span><span class="p">,</span> <span class="mi">20</span><span class="p">);</span>
-	<span class="k">this</span><span class="p">.</span><span class="nx">molotovPool</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">molotov</span><span class="p">);</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">animations</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s1">&#39;flames&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">22</span><span class="p">],</span> <span class="mi">5</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">anchor</span><span class="p">.</span><span class="nx">setTo</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">);</span>
-	<span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">physics</span><span class="p">.</span><span class="nx">enable</span><span class="p">(</span><span class="nx">molotov</span><span class="p">,</span> <span class="nx">Phaser</span><span class="p">.</span><span class="nx">Physics</span><span class="p">.</span><span class="nx">ARCADE</span><span class="p">);</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">gravity</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">GRAVITY</span><span class="p">;</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">kill</span><span class="p">();</span>
-<span class="p">}</span></code></pre></div>
-
-<p>I first created a phaser group called <code>molotovPool</code> and then added some elements to it. The number of elements is controlled by <code>this.NUMBER_OF_MOLOTOVS</code> variable set in the beginning of the code. Each element inside the group is an Arcade Physics [2] body, so we enable it with <code>this.game.physics.enable(molotov, Phaser.Physics.ARCADE)</code> and add physics in the Y axis.</p>
-
-<h3 id="launch-and-particles">2.2 Launch and particles</h3>
-
-<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">throwMolotov</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-	<span class="c1">// Check if it&#39;s possible to throw molotovs at the moment</span>
-	<span class="k">if</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">lastMolotovShotAt</span> <span class="o">==</span> <span class="kc">undefined</span><span class="p">)</span> <span class="k">this</span><span class="p">.</span><span class="nx">lastMolotovShotAt</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// First during the game click if undefined</span>
-	<span class="k">if</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">time</span><span class="p">.</span><span class="nx">now</span> <span class="o">-</span> <span class="k">this</span><span class="p">.</span><span class="nx">lastMolotovShotAt</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">THROW_DELAY</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span> <span class="c1">// If player tries to throw a molotov before the time delay</span>
-	<span class="k">this</span><span class="p">.</span><span class="nx">lastMolotovShotAt</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">time</span><span class="p">.</span><span class="nx">now</span><span class="p">;</span>
-	<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">firstGameClick</span><span class="p">)</span> <span class="p">{</span>
-		<span class="k">this</span><span class="p">.</span><span class="nx">firstGameClick</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
-		<span class="k">return</span><span class="p">;</span>
-	<span class="p">}</span>
-	<span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">preparedMolo</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-	<span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">animations</span><span class="p">.</span><span class="nx">play</span><span class="p">(</span><span class="s1">&#39;molo-throw&#39;</span><span class="p">);</span>
-	
-	<span class="c1">// Gets a &#39;dead&#39; molotov element to reuse in the group `molotovPool`</span>
-	<span class="kd">var</span> <span class="nx">molotov</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">molotovPool</span><span class="p">.</span><span class="nx">getFirstDead</span><span class="p">();</span>
-
-	<span class="k">if</span><span class="p">(</span><span class="nx">molotov</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="nx">molotov</span> <span class="o">==</span> <span class="kc">undefined</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">revive</span><span class="p">();</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">checkWorldBounds</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">outOfBoundsKill</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
-
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">reset</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">y</span> <span class="o">-</span> <span class="mi">30</span><span class="p">);</span> <span class="c1">// Sets the position of the molotov as the current player position</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">iniRot</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">pointerRot</span><span class="p">;</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">velocity</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">cos</span><span class="p">(</span><span class="nx">molotov</span><span class="p">.</span><span class="nx">iniRot</span><span class="p">)</span> <span class="o">*</span> <span class="k">this</span><span class="p">.</span><span class="nx">MOLOTOV_SPEED</span><span class="p">;</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">velocity</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">sin</span><span class="p">(</span><span class="nx">molotov</span><span class="p">.</span><span class="nx">iniRot</span><span class="p">)</span> <span class="o">*</span> <span class="k">this</span><span class="p">.</span><span class="nx">MOLOTOV_SPEED</span><span class="p">;</span>
-	<span class="k">this</span><span class="p">.</span><span class="nx">NUMBER_OF_MOLOTOVS</span><span class="o">--</span><span class="p">;</span>
-
-	<span class="c1">// Create a particle emitter for the molotov</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">add</span><span class="p">.</span><span class="nx">emitter</span><span class="p">(</span><span class="nx">molotov</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> <span class="nx">molotov</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span> <span class="mi">70</span><span class="p">);</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span><span class="p">.</span><span class="nx">makeParticles</span><span class="p">(</span><span class="s1">&#39;spritesheet&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">23</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">26</span><span class="p">]);</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span><span class="p">.</span><span class="nx">lifespan</span> <span class="o">=</span> <span class="mi">500</span><span class="p">;</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span><span class="p">.</span><span class="nx">setAlpha</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">700</span><span class="p">);</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span><span class="p">.</span><span class="nx">setScale</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span><span class="p">.</span><span class="nx">setRotation</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">);</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span><span class="p">.</span><span class="nx">maxParticleSpeed</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Phaser</span><span class="p">.</span><span class="nx">Point</span><span class="p">(</span><span class="o">-</span><span class="mi">80</span><span class="p">,</span><span class="mi">40</span><span class="p">);</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span><span class="p">.</span><span class="nx">minParticleSpeed</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Phaser</span><span class="p">.</span><span class="nx">Point</span><span class="p">(</span><span class="o">-</span><span class="mi">190</span><span class="p">,</span><span class="o">-</span><span class="mi">40</span><span class="p">);</span>
-
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">animations</span><span class="p">.</span><span class="nx">play</span><span class="p">(</span><span class="s1">&#39;flames&#39;</span><span class="p">);</span>
-<span class="p">}</span></code></pre></div>
-
-<p>This part was largely based on the Game Mechanic Explorer <a href="http://gamemechanicexplorer.com/#bullets-1">bullet system</a>, make sure to check it out for a more detailed explanation!</p>
-
-<p>We first do some checks to make sure it’s possible to throw a molotov and then set its position and velocity. Remember, this is only the launch part, we’ll be updating each molotov afterwards. After that we create a fire emitter as a molotov object and then set specific values to it.</p>
-
-<ul>
-  <li><code>makeParticles(spritesheet_name, [frames])</code>: Creates the particles from a previously loaded spritesheet and allows you to select which frames (sprites) can be used as particles for this emitter.</li>
-  <li><code>lifespan(time_in_ms)</code>: Sets the lifetime in milliseconds of each particle after it’s emitted.</li>
-  <li><code>setAlpha(maxAlpha, minAlpha, rate_of_variation)</code>: Sets the max and min alpha (opacity) values that the particle can get and the rate of variation.</li>
-  <li><code>setScale(maxWidth, minWidth, maxHeight, minHeight, rate_of_variation)</code>: Sets max and min width and height that the particle can get and the rate of variation.</li>
-  <li><code>setRotation(minRotation, maxRotation)</code>: Sets max and min rotation.</li>
-</ul>
-
-<p>I think other methods shouldn’t be hard to understand. In any case, you can always visit the <a href="http://phaser.io/docs/2.4.1/Phaser.Particles.Arcade.Emitter.html">Phaser’s Documentation</a> to be sure.</p>
-
-<p>After launching the molotov we update it each frame:</p>
-
-<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="k">this</span><span class="p">.</span><span class="nx">molotovPool</span><span class="p">.</span><span class="nx">forEachAlive</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">molotov</span><span class="p">)</span> <span class="p">{</span>
-	<span class="k">if</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">cos</span><span class="p">(</span><span class="nx">molotov</span><span class="p">.</span><span class="nx">iniRot</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="nx">molotov</span><span class="p">.</span><span class="nx">rotation</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">atan2</span><span class="p">(</span><span class="nx">molotov</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">velocity</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span> <span class="nx">molotov</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">velocity</span><span class="p">.</span><span class="nx">x</span><span class="p">);</span>
-	<span class="k">else</span> <span class="nx">molotov</span><span class="p">.</span><span class="nx">rotation</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">atan2</span><span class="p">(</span><span class="nx">molotov</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">velocity</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span> <span class="nx">molotov</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">velocity</span><span class="p">.</span><span class="nx">x</span><span class="p">);</span>
-	<span class="c1">// Update the position of the fire emitter on each step and emit a particle </span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="nx">molotov</span><span class="p">.</span><span class="nx">x</span><span class="p">;</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="nx">molotov</span><span class="p">.</span><span class="nx">y</span><span class="p">;</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span><span class="p">.</span><span class="nx">emitParticle</span><span class="p">();</span>
-<span class="p">},</span> <span class="k">this</span><span class="p">);</span></code></pre></div>
-
-<p>The method <code>forEachAlive()</code> takes every molotov alive in the group <code>molotovPool</code> (remember that we revived a molotov when throwing it?) and applies a function, which first do some basic physics to calculate the molotov’s angle and then we update the particle emitter position.</p>
-
-<h3 id="hitting-the-ground">2.3 Hitting the ground</h3>
-
-<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="k">this</span><span class="p">.</span><span class="nx">fires</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">add</span><span class="p">.</span><span class="nx">group</span><span class="p">();</span> <span class="c1">// Group for particle emitter</span>
-<span class="k">this</span><span class="p">.</span><span class="nx">fireSprites</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">add</span><span class="p">.</span><span class="nx">group</span><span class="p">();</span> <span class="c1">// Parallel group for sprites</span>
-<span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="mi">55</span><span class="p">;</span> <span class="o">++</span><span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
-	<span class="kd">var</span> <span class="nx">fire</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">add</span><span class="p">.</span><span class="nx">emitter</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">);</span>
-	<span class="k">this</span><span class="p">.</span><span class="nx">fires</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">fire</span><span class="p">);</span>
-	<span class="nx">fire</span><span class="p">.</span><span class="nx">makeParticles</span><span class="p">(</span><span class="s1">&#39;spritesheet&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">23</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">26</span><span class="p">]);</span>
-	<span class="nx">fire</span><span class="p">.</span><span class="nx">lifespan</span> <span class="o">=</span> <span class="mi">500</span><span class="p">;</span>
-	<span class="nx">fire</span><span class="p">.</span><span class="nx">setRotation</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">);</span>
-	<span class="nx">fire</span><span class="p">.</span><span class="nx">setScale</span><span class="p">(</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mi">500</span><span class="p">);</span>
-	<span class="nx">fire</span><span class="p">.</span><span class="nx">maxParticleSpeed</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Phaser</span><span class="p">.</span><span class="nx">Point</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
-
-	<span class="nx">fire</span><span class="p">.</span><span class="nx">spr</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">add</span><span class="p">.</span><span class="nx">sprite</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;spritesheet&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
-	<span class="k">this</span><span class="p">.</span><span class="nx">fireSprites</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">fire</span><span class="p">.</span><span class="nx">spr</span><span class="p">);</span>
-	<span class="k">this</span><span class="p">.</span><span class="nx">game</span><span class="p">.</span><span class="nx">physics</span><span class="p">.</span><span class="nx">enable</span><span class="p">(</span><span class="nx">fire</span><span class="p">.</span><span class="nx">spr</span><span class="p">,</span> <span class="nx">Phaser</span><span class="p">.</span><span class="nx">Physics</span><span class="p">.</span><span class="nx">ARCADE</span><span class="p">);</span> <span class="c1">// Enable physics for each sprite</span>
-	<span class="nx">fire</span><span class="p">.</span><span class="nx">spr</span><span class="p">.</span><span class="nx">alpha</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
-	<span class="nx">fire</span><span class="p">.</span><span class="nx">spr</span><span class="p">.</span><span class="nx">kill</span><span class="p">()</span>
-
-	<span class="nx">fire</span><span class="p">.</span><span class="nx">kill</span><span class="p">();</span>
-<span class="p">}</span></code></pre></div>
-
-<p>That’s a tricky part. When a molotov hits the ground, it creates a fire trail. Now in the implementation, each fire is a particle emitter. And we also want this fire to hurt the enemy, however, in Phaser you can’t check overlap between emitters and sprites (or at least I didn’t find a way), only between sprites. That’s why I had to create a parallel sprite group containing an invisible sprite for each fire.</p>
-
-<div class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="k">this</span><span class="p">.</span><span class="nx">physics</span><span class="p">.</span><span class="nx">arcade</span><span class="p">.</span><span class="nx">collide</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">molotovPool</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">lCollision</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">molotov</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// Checks collision between molotovs and the collision layer</span>
-	<span class="kd">var</span> <span class="nx">tile_hitX</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">lCollision</span><span class="p">.</span><span class="nx">getTileX</span><span class="p">(</span><span class="nx">molotov</span><span class="p">.</span><span class="nx">x</span><span class="p">);</span> <span class="c1">// The x coordinate of the tile hit</span>
-	<span class="kd">var</span> <span class="nx">tile_hitY</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">lCollision</span><span class="p">.</span><span class="nx">getTileY</span><span class="p">(</span><span class="nx">molotov</span><span class="p">.</span><span class="nx">y</span><span class="p">);</span> <span class="c1">// The y coordinate of the tile hit</span>
-	<span class="kd">var</span> <span class="nx">hit_sin</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">sin</span><span class="p">(</span><span class="nx">molotov</span><span class="p">.</span><span class="nx">rotation</span><span class="p">);</span> <span class="c1">// Sin of the angle which the molotov hit the ground</span>
-	<span class="kd">var</span> <span class="nx">hit_cos</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">cos</span><span class="p">(</span><span class="nx">molotov</span><span class="p">.</span><span class="nx">rotation</span><span class="p">);</span> <span class="c1">// Cos of the angle which the molotov hit the ground</span>
-	<span class="kd">var</span> <span class="nx">tiles_in_fire</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">ceil</span><span class="p">((</span><span class="nb">Math</span><span class="p">.</span><span class="nx">abs</span><span class="p">(</span><span class="nx">hit_cos</span><span class="p">)</span><span class="o">*</span><span class="mi">52</span> <span class="o">-</span> <span class="mi">27</span><span class="p">)</span><span class="o">/</span><span class="mf">3.5</span><span class="p">);</span> <span class="c1">// Here we calculate how many tiles will get in fire</span>
-	
-
-	<span class="c1">// Play glass breaking sound - the nearer, the louder.</span>
-	<span class="kd">var</span> <span class="nx">current_tile</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">abs</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">player</span><span class="p">.</span><span class="nx">x</span><span class="p">)</span><span class="o">/</span><span class="k">this</span><span class="p">.</span><span class="nx">TILE_WIDTH</span><span class="p">;</span>
-	<span class="k">this</span><span class="p">.</span><span class="nx">glass_break</span><span class="p">.</span><span class="nx">volume</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">abs</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">abs</span><span class="p">(</span><span class="nx">tile_hitX</span><span class="p">)</span> <span class="o">-</span> <span class="nx">current_tile</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.1</span><span class="p">;</span>
-	<span class="k">this</span><span class="p">.</span><span class="nx">glass_break</span><span class="p">.</span><span class="nx">play</span><span class="p">();</span>
-	
-	<span class="c1">// If the direction of the hit was left-&gt;right</span>
-	<span class="k">if</span><span class="p">(</span><span class="nx">hit_cos</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
-		<span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="nx">tile_hitX</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;=</span> <span class="nx">tile_hitX</span> <span class="o">+</span> <span class="nx">tiles_in_fire</span> <span class="o">&amp;&amp;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">world</span><span class="p">.</span><span class="nx">width</span><span class="o">/</span><span class="k">this</span><span class="p">.</span><span class="nx">TILE_WIDTH</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-			<span class="kd">var</span> <span class="nx">tile</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">map</span><span class="p">.</span><span class="nx">getTile</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">tile_hitY</span><span class="p">,</span> <span class="s1">&#39;collision&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-			<span class="k">if</span><span class="p">(</span><span class="nx">tile</span><span class="p">.</span><span class="nx">index</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">break</span><span class="p">;</span> <span class="c1">// If it&#39;s not an empty tile, break.</span>
-			<span class="k">if</span><span class="p">(</span><span class="nx">tile_hitY</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">world</span><span class="p">.</span><span class="nx">height</span><span class="o">/</span><span class="k">this</span><span class="p">.</span><span class="nx">TILE_HEIGHT</span><span class="p">)</span> <span class="k">break</span><span class="p">;</span>
-
-			<span class="nx">tile</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">map</span><span class="p">.</span><span class="nx">getTile</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">tile_hitY</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;collision&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-			<span class="k">while</span><span class="p">(</span><span class="nx">tile</span><span class="p">.</span><span class="nx">index</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-				<span class="nx">tile_hitY</span><span class="o">++</span><span class="p">;</span>
-				<span class="nx">tile</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">map</span><span class="p">.</span><span class="nx">getTile</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">tile_hitY</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;collision&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-			<span class="p">}</span>
-			<span class="k">this</span><span class="p">.</span><span class="nx">getFire</span><span class="p">(</span><span class="nx">i</span><span class="o">*</span><span class="k">this</span><span class="p">.</span><span class="nx">TILE_WIDTH</span><span class="p">,</span> <span class="nx">tile_hitY</span><span class="o">*</span><span class="k">this</span><span class="p">.</span><span class="nx">TILE_HEIGHT</span><span class="p">,</span> <span class="nx">hit_sin</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
-			<span class="nx">hit_sin</span> <span class="o">*=</span> <span class="mf">1.45</span><span class="p">;</span>
-		<span class="p">}</span>
-	<span class="p">}</span>
-	<span class="c1">// If the direction of the hit was right-&gt;left</span>
-	<span class="k">else</span> <span class="p">{</span>
-		<span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="nx">tile_hitX</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&gt;=</span> <span class="nx">tile_hitX</span> <span class="o">-</span> <span class="nx">tiles_in_fire</span> <span class="o">&amp;&amp;</span> <span class="nx">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
-			<span class="kd">var</span> <span class="nx">tile</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">map</span><span class="p">.</span><span class="nx">getTile</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">tile_hitY</span><span class="p">,</span> <span class="s1">&#39;collision&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-			<span class="k">if</span><span class="p">(</span><span class="nx">tile</span><span class="p">.</span><span class="nx">index</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">break</span><span class="p">;</span> <span class="c1">// If it&#39;s not an empty tile, break.</span>
-			<span class="k">if</span><span class="p">(</span><span class="nx">tile_hitY</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">world</span><span class="p">.</span><span class="nx">height</span><span class="o">/</span><span class="k">this</span><span class="p">.</span><span class="nx">TILE_HEIGHT</span><span class="p">)</span> <span class="k">break</span><span class="p">;</span>
-
-			<span class="nx">tile</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">map</span><span class="p">.</span><span class="nx">getTile</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">tile_hitY</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;collision&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-			<span class="k">while</span><span class="p">(</span><span class="nx">tile</span><span class="p">.</span><span class="nx">index</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-				<span class="nx">tile_hitY</span><span class="o">++</span><span class="p">;</span>
-				<span class="nx">tile</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">map</span><span class="p">.</span><span class="nx">getTile</span><span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">tile_hitY</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;collision&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
-			<span class="p">}</span>
-
-			<span class="k">this</span><span class="p">.</span><span class="nx">getFire</span><span class="p">(</span><span class="nx">i</span><span class="o">*</span><span class="k">this</span><span class="p">.</span><span class="nx">TILE_WIDTH</span><span class="p">,</span> <span class="nx">tile_hitY</span><span class="o">*</span><span class="k">this</span><span class="p">.</span><span class="nx">TILE_HEIGHT</span><span class="p">,</span> <span class="nx">hit_sin</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
-			<span class="nx">hit_sin</span> <span class="o">*=</span> <span class="mf">1.45</span><span class="p">;</span>
-		<span class="p">}</span>
-	<span class="p">}</span>
-
-	<span class="c1">// Kill the molotov that reached the ground and turn its emitter off.</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">fire_emitter</span><span class="p">.</span><span class="nx">on</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
-	<span class="nx">molotov</span><span class="p">.</span><span class="nx">kill</span><span class="p">();</span>
-
-<span class="p">},</span> <span class="kc">null</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span></code></pre></div>
-
-<p><code>collide</code> is the actual method that checks collision between a launched molotov and the ground, which in the code is <code>this.lCollision</code> - the collision layer in the main tilemap. If a molotov collides with the ground we first get some values which we’ll soon use based on the molotov’s angle: <code>tile_hitX</code>, <code>tile_hitY</code>, <code>hit_sin</code>, <code>hit_cos</code>, and <code>tiles_in_fire</code>.</p>
-
-<p><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Ciclo.png/300px-Ciclo.png" alt="" /></p>
-
-<p><code>tiles_in_fire</code> is the number of tiles that will be on fire after the hit. We calculate it based on the cosine of the molotov hit’s angle with the ground. First, we must remember that the sine and cosine functions can get values between 0 and 1. With this in mind, if the molotov trajectory is very “open” its angle with the ground gets near to 0, and cosine of 0 is equal to 1, its maximum value. By the other hand, if the trajectory is “closed”, the hit angle will be nearer to 90, perpendicular to the ground. And cosine of 90 is equal to zero, it’s minimum value. As we want a large fire trail when the trajectory is “open” and a small one when it’s “closed”, the cosine function helps us to figure out the width of this trail.</p>
-
-<p><img src="/img/2015-07/molotov-open.png" alt="" />
-<img src="/img/2015-07/molotov-closed.png" alt="" /></p>
-
-<p>After that we use the current player’s position to calculate the volume of the glass crash sound. Obviously, if the hit happened in a tile close to the player the sound will be louder than if the hit happened in a distant location.</p>
-
-<p>Finally, we use <code>tiles_in_fire</code> to actually add the fire emitters and sprites we’ve created earlier. We do a check to see if the tile is empty in the collision layer (<code>this.lCollision</code>) and it’s possible to place a fire there. Otherwise, we stop adding fires.</p>
-
-<p><em>I really hope you could understand the basic concepts behind the molotov system. To get a full grasp of how it works, I suggest you to download the project in GitHub and try to see how everything happens “live”.</em></p>
-
-<h2 id="whats-left-to-do">3. What’s left to do?</h2>
-
-<p>Well, Pablo is far from perfect, even for a prototype. And I’m not even sure if I will continue to work with this mechanic, as I’m working on another game project (which hasn’t been made public yet!). However, this system can still be improved to feel better. For example, an explosion just at the moment the molotov hit the ground would make the system look more realistic. Also, I think it’s imprescindible that you can control the intensity of the launch before releasing the mouse button. Whether you control it by the time holding the mouse button or by clicking and dragging (as in angry birds), right now it feels kinda artificial, as there only one launch intensity possible. These and other details can be implemented before begin working on a real game with this mechanic.</p>
-
-<h3 id="notes">Notes:</h3>
-
-<ol>
-  <li>http://www.abc.net.au/news/2015-07-13/eurozone-leaders-say-agreement-reached-at-greece-talks/6616448</li>
-  <li>Phaser has 3 physic engines available at the moment of this post: Arcade, P2, and Box2D. Arcade uses <a href="http://stackoverflow.com/questions/22512319/what-is-aabb-collision-detection">AABB</a> system to handle collision, which makes it more suitable for old-style platformer games.</li>
-</ol>
-
-</div>
+    	
+    	<a href="/phaser/pablo/2015/07/26/molotov-system-in-phaser.html">Read more...</a>
+    </div>
     </article>
     
 
@@ -268,7 +74,11 @@
 
 
 		
+		<div class="disqus-comments">
+			
+		</div>
 	</main>
+
 	</div>
 	
 	<footer class="site-footer">
@@ -278,6 +88,16 @@
 </footer>
 
 	
+	<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-65644805-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
 
 </body>
 

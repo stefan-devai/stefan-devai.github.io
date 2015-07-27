@@ -27,9 +27,19 @@
       <a class="site-title fade-out" href="/">STEFAN DEVAI<div class="title-underline"></div></a>
 
       <ul>
-        <li><a class="page-link fade-out " href="/projects/">Projects</a></li>
-        <li><a class="page-link fade-out " href="/gallery/">Gallery</a></li>
-        <li><a class="page-link fade-out " href="/about/">About</a></li>
+      	
+      		
+      			<li><a class="page-link fade-out " href="/projects">Projects</a></li>
+      		
+      	
+      		
+      			<li><a class="page-link fade-out " href="/gallery">Gallery</a></li>
+      		
+      	
+      		
+      			<li><a class="page-link fade-out " href="/about">About</a></li>
+      		
+      	
       </ul>
 
     </nav>
@@ -50,11 +60,13 @@
 
 <p>In this post I’m going to explain how the molotov system was implemented in <strong>Pablo</strong>. <a href="/games/Pablo" target="_blank">Click here</a> to try it for yourself if you haven’t yet. The controls work like this: click and hold to prepare the molotov, then release to throw it. Other controls are the usual ones for platformers - WASD/Arrows for player movement and space to lift/place boxes. There are some State Robots so you can try your aim in molotov throwing ;)</p>
 
+<!-- more -->
+
 <h2 id="the-prototype">1. The prototype</h2>
 
-<iframe width="420" height="315" src="https://www.youtube.com/embed/fXTMWbvFX9k" frameborder="0" allowfullscreen=""></iframe>
-
 <p>The idea of a game based on molotov throwing came after reading about the anarchist struggle in Greece within all the political turbulence that the country is passing through. In this conjecture, Alexis Tsipras (Greece Prime Minister), supposedly belonging to a left party, accepted a bailout deal accompained by austerity packages after a national referendum a week before said NO to the decision taken by Tsipras. [1] People is often - if not always - betrayed by their governments, therefore only one way out is left for us: Struggle and organization by ourselves.</p>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/fXTMWbvFX9k" frameborder="0" allowfullscreen=""></iframe>
 
 <p>Anyways, besides being a great tool in class struggle, I thought that molotovs would look very cool inside a game! So I opened photoshop and began sketching fires, a character, a molotov, grounds, &amp;c., until I had some nice sprites to work with. I wanted to create a gloomy ambient, kinda dark, that reminds me of how protests feel at night. As always, I’ve left to draw a background in another occasion, as it takes so long time for me, specially when working with pixel art.</p>
 
@@ -253,11 +265,11 @@
 
 <p>Well, Pablo is far from perfect, even for a prototype. And I’m not even sure if I will continue to work with this mechanic, as I’m working on another game project (which hasn’t been made public yet!). However, this system can still be improved to feel better. For example, an explosion just at the moment the molotov hit the ground would make the system look more realistic. Also, I think it’s imprescindible that you can control the intensity of the launch before releasing the mouse button. Whether you control it by the time holding the mouse button or by clicking and dragging (as in angry birds), right now it feels kinda artificial, as there only one launch intensity possible. These and other details can be implemented before begin working on a real game with this mechanic.</p>
 
-<h3 id="notes">Notes:</h3>
+<h3 id="notes"><em>Notes:</em></h3>
 
 <ol>
-  <li>http://www.abc.net.au/news/2015-07-13/eurozone-leaders-say-agreement-reached-at-greece-talks/6616448</li>
-  <li>Phaser has 3 physic engines available at the moment of this post: Arcade, P2, and Box2D. Arcade uses <a href="http://stackoverflow.com/questions/22512319/what-is-aabb-collision-detection">AABB</a> system to handle collision, which makes it more suitable for old-style platformer games.</li>
+  <li><em><a href="http://www.abc.net.au/news/2015-07-13/eurozone-leaders-say-agreement-reached-at-greece-talks/6616448">http://www.abc.net.au/news/2015-07-13/eurozone-leaders-say-agreement-reached-at-greece-talks/6616448</a></em></li>
+  <li><em>Phaser has 3 physic engines available at the moment of this post: Arcade, P2, and Box2D. Arcade uses <a href="http://stackoverflow.com/questions/22512319/what-is-aabb-collision-detection">AABB</a> system to handle collision, which makes it more suitable for old-style platformer games.</em></li>
 </ol>
 
 
@@ -266,7 +278,26 @@
 </div>
 
 		
+		<div class="disqus-comments">
+			
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    // Required: on line below, replace text in quotes with your forum shortname
+    var disqus_shortname = 'stefandevai';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+		</div>
 	</main>
+
 	</div>
 	
 	<footer class="site-footer">
@@ -276,6 +307,16 @@
 </footer>
 
 	
+	<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-65644805-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
 
 </body>
 

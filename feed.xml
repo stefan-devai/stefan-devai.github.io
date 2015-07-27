@@ -6,8 +6,8 @@
 </description>
     <link>http://stefan-devai.github.io/</link>
     <atom:link href="http://stefan-devai.github.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 27 Jul 2015 02:04:02 -0700</pubDate>
-    <lastBuildDate>Mon, 27 Jul 2015 02:04:02 -0700</lastBuildDate>
+    <pubDate>Mon, 27 Jul 2015 04:27:59 -0700</pubDate>
+    <lastBuildDate>Mon, 27 Jul 2015 04:27:59 -0700</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -16,11 +16,13 @@
 
 &lt;p&gt;In this post I’m going to explain how the molotov system was implemented in &lt;strong&gt;Pablo&lt;/strong&gt;. &lt;a href=&quot;/games/Pablo&quot; target=&quot;_blank&quot;&gt;Click here&lt;/a&gt; to try it for yourself if you haven’t yet. The controls work like this: click and hold to prepare the molotov, then release to throw it. Other controls are the usual ones for platformers - WASD/Arrows for player movement and space to lift/place boxes. There are some State Robots so you can try your aim in molotov throwing ;)&lt;/p&gt;
 
+&lt;!-- more --&gt;
+
 &lt;h2 id=&quot;the-prototype&quot;&gt;1. The prototype&lt;/h2&gt;
 
-&lt;iframe width=&quot;420&quot; height=&quot;315&quot; src=&quot;https://www.youtube.com/embed/fXTMWbvFX9k&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
-
 &lt;p&gt;The idea of a game based on molotov throwing came after reading about the anarchist struggle in Greece within all the political turbulence that the country is passing through. In this conjecture, Alexis Tsipras (Greece Prime Minister), supposedly belonging to a left party, accepted a bailout deal accompained by austerity packages after a national referendum a week before said NO to the decision taken by Tsipras. [1] People is often - if not always - betrayed by their governments, therefore only one way out is left for us: Struggle and organization by ourselves.&lt;/p&gt;
+
+&lt;iframe width=&quot;560&quot; height=&quot;315&quot; src=&quot;https://www.youtube.com/embed/fXTMWbvFX9k&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
 
 &lt;p&gt;Anyways, besides being a great tool in class struggle, I thought that molotovs would look very cool inside a game! So I opened photoshop and began sketching fires, a character, a molotov, grounds, &amp;amp;c., until I had some nice sprites to work with. I wanted to create a gloomy ambient, kinda dark, that reminds me of how protests feel at night. As always, I’ve left to draw a background in another occasion, as it takes so long time for me, specially when working with pixel art.&lt;/p&gt;
 
@@ -219,11 +221,11 @@
 
 &lt;p&gt;Well, Pablo is far from perfect, even for a prototype. And I’m not even sure if I will continue to work with this mechanic, as I’m working on another game project (which hasn’t been made public yet!). However, this system can still be improved to feel better. For example, an explosion just at the moment the molotov hit the ground would make the system look more realistic. Also, I think it’s imprescindible that you can control the intensity of the launch before releasing the mouse button. Whether you control it by the time holding the mouse button or by clicking and dragging (as in angry birds), right now it feels kinda artificial, as there only one launch intensity possible. These and other details can be implemented before begin working on a real game with this mechanic.&lt;/p&gt;
 
-&lt;h3 id=&quot;notes&quot;&gt;Notes:&lt;/h3&gt;
+&lt;h3 id=&quot;notes&quot;&gt;&lt;em&gt;Notes:&lt;/em&gt;&lt;/h3&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;http://www.abc.net.au/news/2015-07-13/eurozone-leaders-say-agreement-reached-at-greece-talks/6616448&lt;/li&gt;
-  &lt;li&gt;Phaser has 3 physic engines available at the moment of this post: Arcade, P2, and Box2D. Arcade uses &lt;a href=&quot;http://stackoverflow.com/questions/22512319/what-is-aabb-collision-detection&quot;&gt;AABB&lt;/a&gt; system to handle collision, which makes it more suitable for old-style platformer games.&lt;/li&gt;
+  &lt;li&gt;&lt;em&gt;&lt;a href=&quot;http://www.abc.net.au/news/2015-07-13/eurozone-leaders-say-agreement-reached-at-greece-talks/6616448&quot;&gt;http://www.abc.net.au/news/2015-07-13/eurozone-leaders-say-agreement-reached-at-greece-talks/6616448&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;em&gt;Phaser has 3 physic engines available at the moment of this post: Arcade, P2, and Box2D. Arcade uses &lt;a href=&quot;http://stackoverflow.com/questions/22512319/what-is-aabb-collision-detection&quot;&gt;AABB&lt;/a&gt; system to handle collision, which makes it more suitable for old-style platformer games.&lt;/em&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
 </description>
